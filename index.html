@@ -2154,7 +2154,10 @@
   }
   function syncWrite(c){ try{ localStorage.setItem(SYNC_KEY, JSON.stringify(c)); }catch(e){} }
   var syncConf = syncRead();
+  function localCapable(){ return location.protocol === 'http:'; }
+  function isPublicHost(){ return /github\.io/i.test(location.hostname || ''); }
   if(!syncConf.mode) syncConf.mode = (syncConf.url && syncConf.anon) ? 'supabase' : 'local';
+  if(isPublicHost() && syncConf.mode === 'local') syncConf.mode = 'supabase';
   var syncBusy = false, syncTimer = null;
 
   function afterSaveHook(){
@@ -2230,6 +2233,7 @@
   // 统一入口
   async function doAuth(kind, email, pw){
     if(syncConf.mode === 'local'){
+      if(isPublicHost()) throw new Error('公网版没有本机服务：本机同步请在 http://127.0.0.1:8000 使用；这里可切 Supabase 或直接本地使用');
       if(!isHttp()) throw new Error('请通过 http://127.0.0.1:8000 打开页面后再用本机同步');
       var r = kind === 'register' ? await localSignup(email, pw) : await localLogin(email, pw);
       syncConf.access = r.token; syncConf.id = email; syncConf.email = email; syncConf.refresh='';
@@ -2336,9 +2340,14 @@
     $('syncAnon').value = syncConf.anon;
     $('syncEmail').value = syncConf.email || '';
     $('syncPass').value = '';
+    if(local && isPublicHost()){ setSyncStatus('公网版没有「本机服务」。要用本机同步请回 http://127.0.0.1:8000；这里可切换 Supabase，或不注册直接用（数据在本浏览器）。'); return; }
     if(local && !isHttp()){ setSyncStatus('本机模式：请用 http://127.0.0.1:8000 打开此页'); return; }
     if(syncConf.access){ setSyncStatus('已登录 ' + syncConf.email + (syncConf.dirty ? ' · 有待同步更改' : '') + syncTimeLabel()); }
-    else setSyncStatus(local ? '本机服务模式：注册或登录即可，数据存这台电脑' : (syncConf.url ? '已配置 Supabase，请登录' : 'Supabase 模式：请填 URL/anon key 并保存'));
+    else {
+      if(local) setSyncStatus('本机服务模式：注册或登录即可，数据存这台电脑');
+      else if(isPublicHost()) setSyncStatus('公网版云同步用 Supabase（可选）：填 URL/anon key 并保存后注册/登录；不配置也能正常用，数据存本浏览器 + 导出/导入备份。');
+      else setSyncStatus(syncConf.url ? '已配置 Supabase，请登录' : 'Supabase 模式：请填 URL/anon key 并保存');
+    }
   }
 
   $('syncOpenBtn').addEventListener('click', function(){ renderSyncPanel(); $('syncOverlay').hidden = false; });

@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Habit" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#eef1f6</item>
+        <item name="android:navigationBarColor">#eef1f6</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

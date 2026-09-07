@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>今日打卡 · LA Clippers</title>
 <meta name="theme-color" content="#eef1f6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -490,6 +493,19 @@
   #syncOverlay .cf-field input{background:#fff;}
   .sync-state{font-size:12px;color:var(--ink-2);line-height:1.7;}
 
+
+  .install-wrap{margin:4px 0 2px;}
+  .install-btn{
+    width:100%;border:none;border-radius:12px;padding:11px 0;font-size:14.5px;font-weight:700;
+    background:linear-gradient(135deg,var(--red-bright),var(--red-dark));color:#fff;cursor:pointer;font-family:inherit;
+    box-shadow:0 3px 10px rgba(200,16,46,.22);transition:transform .1s ease, filter .15s ease;
+  }
+  .install-btn:hover{filter:brightness(1.06);}
+  .install-btn:active{transform:scale(.98);}
+  .install-help .note-sub a{color:var(--blue);word-break:break-all;}
+  .step-line{margin:2px 0;font-size:13px;color:var(--ink-2);line-height:1.8;}
+  .step-line b{color:var(--ink);}
+
 </style>
 </head>
 <body>
@@ -588,6 +604,7 @@
       <div>
         <a id="syncOpenBtn">账号 / 同步</a> · <a id="exportBtn">导出数据</a> · <a id="importBtn">导入数据</a>
       </div>
+      <div class="install-wrap"><button type="button" id="installAppBtn" class="install-btn">📲 安装为 App（安卓 / 桌面）</button></div>
       <div class="team-line">LA Clippers · 坚持就是胜利</div>
       <div class="foot-note">数据保存在本浏览器中，每天自动开始新的一天</div>
       <input type="file" id="importFile" accept=".json,application/json" hidden>
@@ -2355,6 +2372,54 @@
     syncWrite(syncConf); renderSyncPanel();
   });
   $('syncNowBtn').addEventListener('click', function(){ syncNow(true); });
+
+  // ---- 安装为 App 按钮 ----
+  var deferredPrompt = null;
+  var installBtn = $('installAppBtn');
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+  });
+  window.addEventListener('appinstalled', function(){
+    if(installBtn) installBtn.textContent = '✓ 已安装到桌面';
+    deferredPrompt = null;
+  });
+  function hostedUrl(){ return 'https://zycgod-opop.github.io/habit-checkin/'; }
+  function isGithubIo(){ return location.hostname.indexOf('github.io') >= 0; }
+  function showInstallHelp(){
+    var ov = document.createElement('div');
+    ov.className = 'overlay install-help';
+    ov.id = 'installHelp';
+    ov.innerHTML =
+      '<div class="card note-dialog">' +
+        '<p class="note-title">把「今日打卡」装成 App</p>' +
+        '<p class="note-sub" id="installHelpBody"></p>' +
+        '<div style="max-height:60vh;overflow:auto;padding-right:2px;">' +
+          (isGithubIo() ?
+            '<div class="step-line"><b>安卓 Chrome：</b>点右上角 ⋮ 菜单 → 「安装应用」或「添加到主屏幕」；若出现安装横幅直接点「安装」。</div>' +
+            '<div class="step-line"><b>iPhone Safari：</b>点底部「分享」按钮 → 「添加到主屏幕」。</div>' +
+            '<div class="step-line"><b>电脑 Chrome/Edge：</b>点地址栏右侧「安装」图标。</div>'
+          :
+            '<div class="step-line">当前页面不是公网网址，手机/电脑不能直接安装。请先在浏览器打开下面这个公网网址，再点一次本按钮：</div>' +
+            '<div class="step-line"><a href="' + hostedUrl() + '" target="_blank" rel="noopener">' + hostedUrl() + '</a></div>' +
+            '<div class="step-line">打开后：安卓 Chrome 点 ⋮ →「安装应用 / 添加到主屏幕」；iPhone 点分享 →「添加到主屏幕」；电脑点地址栏安装图标。</div>'
+          ) +
+        '</div>' +
+        '<div class="note-actions"><span class="spacer"></span><button type="button" class="btn primary" id="installHelpClose">知道了</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', function(ev){ if(ev.target === ov) ov.remove(); });
+    $('installHelpClose').addEventListener('click', function(){ ov.remove(); });
+  }
+  installBtn.addEventListener('click', async function(){
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      try{ await deferredPrompt.userChoice; }catch(e){}
+      deferredPrompt = null;
+    } else {
+      showInstallHelp();
+    }
+  });
 
   // PWA：可安装到桌面 / 主屏幕
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')){

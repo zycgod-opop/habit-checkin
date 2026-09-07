@@ -2387,6 +2387,25 @@
   function hostedUrl(){ return 'https://zycgod-opop.github.io/habit-checkin/'; }
   function isGithubIo(){ return location.hostname.indexOf('github.io') >= 0; }
   function showInstallHelp(){
+    var ua = navigator.userAgent || '';
+    var isQuark = /quark|夸克/i.test(ua);
+    var isIos = /iphone|ipad|ipod/i.test(ua);
+    var installSteps =
+      isGithubIo() ? (
+        isIos ?
+          '<div class="step-line"><b>iPhone Safari：</b>点底部「分享」→「添加到主屏幕」。</div>'
+        :
+        (isQuark ?
+          '<div class="step-line"><b>夸克浏览器（OPPO/安卓）：</b>点地址栏右侧或底部的「≡/⋯」菜单 → 选「<b>添加到桌面 / 添加到主屏幕</b>」，桌面就会生成图标；下次从图标打开即可。</div>' +
+          '<div class="step-line">如果菜单里没有该选项，可换用系统自带浏览器（如 OPPO 浏览器）打开本页再添加；或点右上角菜单找「在浏览器中打开」。</div>'
+        :
+          '<div class="step-line"><b>安卓 Chrome：</b>点右上角 ⋮ →「安装应用」或「添加到主屏幕」；若出现横幅直接点「安装」。</div>') +
+        '<div class="step-line"><b>电脑 Chrome/Edge：</b>点地址栏右侧「安装」图标。</div>'
+      ) :
+        '<div class="step-line">当前页面不是公网网址，请先在浏览器打开下面这个公网网址，再点一次本按钮：</div>' +
+        '<div class="step-line"><a href="' + hostedUrl() + '" target="_blank" rel="noopener">' + hostedUrl() + '</a></div>' +
+        '<div class="step-line">打开后：夸克/安卓浏览器菜单「添加到桌面」，Chrome 点「安装应用」，iPhone 用「添加到主屏幕」。</div>';
+
     var ov = document.createElement('div');
     ov.className = 'overlay install-help';
     ov.id = 'installHelp';
@@ -2394,17 +2413,7 @@
       '<div class="card note-dialog">' +
         '<p class="note-title">把「今日打卡」装成 App</p>' +
         '<p class="note-sub" id="installHelpBody"></p>' +
-        '<div style="max-height:60vh;overflow:auto;padding-right:2px;">' +
-          (isGithubIo() ?
-            '<div class="step-line"><b>安卓 Chrome：</b>点右上角 ⋮ 菜单 → 「安装应用」或「添加到主屏幕」；若出现安装横幅直接点「安装」。</div>' +
-            '<div class="step-line"><b>iPhone Safari：</b>点底部「分享」按钮 → 「添加到主屏幕」。</div>' +
-            '<div class="step-line"><b>电脑 Chrome/Edge：</b>点地址栏右侧「安装」图标。</div>'
-          :
-            '<div class="step-line">当前页面不是公网网址，手机/电脑不能直接安装。请先在浏览器打开下面这个公网网址，再点一次本按钮：</div>' +
-            '<div class="step-line"><a href="' + hostedUrl() + '" target="_blank" rel="noopener">' + hostedUrl() + '</a></div>' +
-            '<div class="step-line">打开后：安卓 Chrome 点 ⋮ →「安装应用 / 添加到主屏幕」；iPhone 点分享 →「添加到主屏幕」；电脑点地址栏安装图标。</div>'
-          ) +
-        '</div>' +
+        '<div style="max-height:60vh;overflow:auto;padding-right:2px;">' + installSteps + '</div>' +
         '<div class="note-actions"><span class="spacer"></span><button type="button" class="btn primary" id="installHelpClose">知道了</button></div>' +
       '</div>';
     document.body.appendChild(ov);

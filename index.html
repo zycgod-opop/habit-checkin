@@ -2390,17 +2390,23 @@
     var ua = navigator.userAgent || '';
     var isQuark = /quark|夸克/i.test(ua);
     var isIos = /iphone|ipad|ipod/i.test(ua);
+    var isChromeAndroid = /android/i.test(ua) && /chrome|chromium/i.test(ua) && !isQuark;
     var installSteps =
       isGithubIo() ? (
         isIos ?
           '<div class="step-line"><b>iPhone Safari：</b>点底部「分享」→「添加到主屏幕」。</div>'
         :
+        (isChromeAndroid ?
+          '<div class="step-line"><b>谷歌 Chrome（安卓）：</b>现在点本页底部「安装为 App」按钮会直接弹出系统安装框 → 点「<b>安装</b>」即可，和下载软件一样。</div>' +
+          '<div class="step-line">若没有弹出：请点右上角 ⋮ →「<b>安装应用</b>」，或<b>刷新一次页面</b>再点底部按钮。</div>' +
+          '<div class="step-line">确认方式：退出后长按桌面图标看是否显示「今日打卡」并全屏打开。</div>'
+        :
         (isQuark ?
-          '<div class="step-line"><b>夸克浏览器（OPPO/安卓）：</b>点地址栏右侧或底部的「≡/⋯」菜单 → 选「<b>添加到桌面 / 添加到主屏幕</b>」，桌面就会生成图标；下次从图标打开即可。</div>' +
-          '<div class="step-line">如果菜单里没有该选项，可换用系统自带浏览器（如 OPPO 浏览器）打开本页再添加；或点右上角菜单找「在浏览器中打开」。</div>'
+          '<div class="step-line"><b>夸克浏览器（OPPO/安卓）：</b>夸克不支持 Chrome 式安装，请在 OPPO 上改用<b>谷歌 Chrome</b> 打开本页（菜单 →「在 Chrome 中打开」），Chrome 里点本按钮即可弹出安装。</div>' +
+          '<div class="step-line">若仍想用夸克：点菜单「添加到桌面 / 添加到主屏幕」建快捷方式，效果接近但不是独立 App。</div>'
         :
           '<div class="step-line"><b>安卓 Chrome：</b>点右上角 ⋮ →「安装应用」或「添加到主屏幕」；若出现横幅直接点「安装」。</div>') +
-        '<div class="step-line"><b>电脑 Chrome/Edge：</b>点地址栏右侧「安装」图标。</div>'
+        '<div class="step-line"><b>电脑 Chrome/Edge：</b>点地址栏右侧「安装」图标。</div>')
       ) :
         '<div class="step-line">当前页面不是公网网址，请先在浏览器打开下面这个公网网址，再点一次本按钮：</div>' +
         '<div class="step-line"><a href="' + hostedUrl() + '" target="_blank" rel="noopener">' + hostedUrl() + '</a></div>' +

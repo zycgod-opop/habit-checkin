@@ -506,6 +506,19 @@
   .step-line{margin:2px 0;font-size:13px;color:var(--ink-2);line-height:1.8;}
   .step-line b{color:var(--ink);}
 
+
+  .qty-panel{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px;margin:4px 0 8px;}
+  .qty-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+  .qty-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .qty-row input,.qty-row select{border:1px solid var(--line-strong);border-radius:9px;padding:8px 9px;font-size:14px;background:#fff;color:var(--ink);outline:none;font-family:inherit;}
+  .qty-row input{width:80px;text-align:right;}
+  .qty-row .btn{padding:8px 12px;font-size:13px;}
+  .qty-tag{font-style:normal;font-size:11px;color:var(--blue);background:var(--blue-soft);border-radius:6px;padding:1px 7px;margin-left:4px;font-weight:600;}
+
+
+  .qty-f{margin-top:8px;}
+  .qty-f input{width:64px;border:1px solid var(--line-strong);border-radius:8px;padding:5px 7px;font-size:13.5px;background:#fff;color:var(--ink);outline:none;font-family:inherit;text-align:right;}
+
 </style>
 </head>
 <body>
@@ -632,12 +645,16 @@
       </div>
       <div class="cf-field"><div class="cf-label">邮箱</div><input id="syncEmail" type="email" autocomplete="email"></div>
       <div class="cf-field"><div class="cf-label">密码</div><input id="syncPass" type="password" autocomplete="current-password"></div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);margin:-4px 0 12px;"><input type="checkbox" id="syncRemember" checked> 记住我 · 下次自动登录</label>
       <div class="note-actions" style="justify-content:flex-start;flex-wrap:wrap;">
         <button type="button" class="btn ghost" id="syncSignup">注册</button>
         <button type="button" class="btn primary" id="syncLogin">登录</button>
         <button type="button" class="btn ghost" id="syncLogout">登出</button>
         <span style="flex:1"></span>
         <button type="button" class="btn ghost" id="syncNowBtn">立即同步</button>
+      </div>
+      <div class="note-actions" style="justify-content:flex-start;margin-top:4px;">
+        <button type="button" class="mnote-btn" id="syncReset" hidden>忘记密码？重置密码（本机模式）</button>
       </div>
       <p class="fit-note">数据保存在 Supabase 的 profiles 表中（仅本人可见）。断网时本页照常使用，联网后会自动补同步。首次使用请先在 Supabase SQL 编辑器执行项目里的 supabase.sql。</p>
     </div>
@@ -726,7 +743,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {} }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {} }; }
 
   function load(){
     try{
@@ -743,6 +760,7 @@
       raw.trainDays = (raw.trainDays && typeof raw.trainDays === 'object') ? raw.trainDays : {};
       raw.goals = (raw.goals && typeof raw.goals === 'object') ? { kcal: +raw.goals.kcal || 0, protein: +raw.goals.protein || 0 } : { kcal: 0, protein: 0 };
       raw.weights = (raw.weights && typeof raw.weights === 'object') ? raw.weights : {};
+      raw.foodServing = (raw.foodServing && typeof raw.foodServing === 'object') ? raw.foodServing : {};
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1539,7 +1557,8 @@
           workouts: (data.workouts && typeof data.workouts === 'object') ? data.workouts : {},
           trainDays: (data.trainDays && typeof data.trainDays === 'object') ? data.trainDays : {},
           goals: (data.goals && typeof data.goals === 'object') ? { kcal: +data.goals.kcal || 0, protein: +data.goals.protein || 0 } : { kcal: 0, protein: 0 },
-          weights: (data.weights && typeof data.weights === 'object') ? data.weights : {}
+          weights: (data.weights && typeof data.weights === 'object') ? data.weights : {},
+          foodServing: (data.foodServing && typeof data.foodServing === 'object') ? data.foodServing : {}
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -1559,54 +1578,54 @@
 
   // ---- 内置常见食物营养（每 100g 参考值，单位：kcal/g）----
   var FOOD_LIBRARY = [
-    { id:'fc1', name:'米饭（熟）', brand:'', kcal:116, p:2.6, c:25.9, f:0.3 },
-    { id:'fc2', name:'馒头', brand:'', kcal:223, p:7.0, c:47.0, f:1.1 },
-    { id:'fc3', name:'面条（煮）', brand:'', kcal:137, p:4.5, c:27.0, f:1.0 },
-    { id:'fc4', name:'燕麦片', brand:'', kcal:377, p:13.0, c:66.0, f:7.0 },
-    { id:'fc5', name:'全麦面包', brand:'', kcal:246, p:9.0, c:45.0, f:3.0 },
-    { id:'fc6', name:'红薯（蒸）', brand:'', kcal:86, p:1.6, c:20.0, f:0.1 },
-    { id:'fc7', name:'玉米（煮）', brand:'', kcal:112, p:4.0, c:22.0, f:1.2 },
-    { id:'fc8', name:'土豆（煮）', brand:'', kcal:77, p:2.0, c:17.0, f:0.1 },
-    { id:'fc9', name:'鸡蛋（整）', brand:'', kcal:144, p:13.3, c:2.8, f:8.8 },
-    { id:'fc10', name:'鸡蛋白', brand:'', kcal:52, p:10.9, c:0.7, f:0.2 },
-    { id:'fc11', name:'鸡胸肉（去皮）', brand:'', kcal:133, p:24.6, c:0, f:3.2 },
-    { id:'fc12', name:'鸡腿肉（去皮）', brand:'', kcal:181, p:24.0, c:0, f:9.0 },
-    { id:'fc13', name:'瘦牛肉', brand:'', kcal:143, p:22.0, c:0, f:5.0 },
-    { id:'fc14', name:'猪里脊', brand:'', kcal:155, p:20.0, c:0, f:8.0 },
-    { id:'fc15', name:'三文鱼（生）', brand:'', kcal:208, p:20.0, c:0, f:13.0 },
-    { id:'fc16', name:'虾仁', brand:'', kcal:93, p:18.0, c:1.0, f:1.5 },
-    { id:'fc17', name:'豆腐（北）', brand:'', kcal:116, p:12.0, c:4.0, f:6.0 },
-    { id:'fc18', name:'纯牛奶（全脂）', brand:'', kcal:65, p:3.3, c:4.9, f:3.6 },
-    { id:'fc19', name:'纯牛奶（低脂）', brand:'', kcal:45, p:3.4, c:5.0, f:1.5 },
-    { id:'fc20', name:'无糖酸奶', brand:'', kcal:63, p:3.5, c:5.0, f:3.0 },
-    { id:'fc21', name:'豆浆（无糖）', brand:'', kcal:31, p:3.0, c:1.2, f:1.6 },
-    { id:'fc22', name:'香蕉', brand:'', kcal:93, p:1.4, c:22.0, f:0.2 },
-    { id:'fc23', name:'苹果', brand:'', kcal:53, p:0.3, c:13.8, f:0.2 },
-    { id:'fc24', name:'橙子', brand:'', kcal:47, p:0.9, c:11.8, f:0.1 },
-    { id:'fc25', name:'牛油果', brand:'', kcal:160, p:2.0, c:8.5, f:14.7 },
-    { id:'fc26', name:'西兰花（煮）', brand:'', kcal:35, p:2.4, c:4.4, f:0.4 },
-    { id:'fc27', name:'番茄', brand:'', kcal:18, p:0.9, c:3.9, f:0.2 },
-    { id:'fc28', name:'黄瓜', brand:'', kcal:15, p:0.7, c:3.6, f:0.1 },
-    { id:'fc29', name:'生菜', brand:'', kcal:13, p:1.4, c:2.0, f:0.2 },
-    { id:'fc30', name:'花生酱', brand:'', kcal:588, p:25.0, c:20.0, f:50.0 },
-    { id:'fc31', name:'橄榄油', brand:'', kcal:884, p:0, c:0, f:100.0 },
-    { id:'fc32', name:'白砂糖', brand:'', kcal:400, p:0, c:100.0, f:0 },
-    { id:'fc33', name:'蜂蜜', brand:'', kcal:321, p:0.4, c:80.0, f:0 },
-    { id:'fc34', name:'乳清蛋白粉（每勺约30g折算100g）', brand:'', kcal:390, p:78.0, c:6.0, f:6.0 },
-    { id:'fb1', name:'特仑苏纯牛奶', brand:'蒙牛', kcal:68, p:3.6, c:5.0, f:3.8 },
-    { id:'fb2', name:'蒙牛纯牛奶', brand:'蒙牛', kcal:61, p:3.2, c:4.8, f:3.2 },
-    { id:'fb3', name:'伊利纯牛奶', brand:'伊利', kcal:61, p:3.2, c:4.8, f:3.2 },
-    { id:'fb4', name:'可口可乐', brand:'可口可乐', kcal:43, p:0, c:10.6, f:0 },
-    { id:'fb5', name:'零度可乐', brand:'可口可乐', kcal:0, p:0, c:0, f:0 },
-    { id:'fb6', name:'元气森林气泡水', brand:'元气森林', kcal:0, p:0, c:0, f:0 },
-    { id:'fb7', name:'康师傅冰红茶', brand:'康师傅', kcal:38, p:0, c:9.6, f:0 },
-    { id:'fb8', name:'东方树叶乌龙茶', brand:'农夫山泉', kcal:0, p:0, c:0, f:0 },
-    { id:'fb9', name:'奥利奥原味饼干', brand:'奥利奥', kcal:490, p:4.8, c:69.0, f:21.0 },
-    { id:'fb10', name:'乐事原味薯片', brand:'乐事', kcal:536, p:6.7, c:53.0, f:33.0 },
-    { id:'fb11', name:'德芙牛奶巧克力', brand:'德芙', kcal:550, p:5.6, c:56.0, f:33.0 },
-    { id:'fb12', name:'士力架', brand:'玛氏', kcal:490, p:8.0, c:59.0, f:24.0 },
-    { id:'fb13', name:'康师傅红烧牛肉面（含调料）', brand:'康师傅', kcal:450, p:8.0, c:62.0, f:19.0 },
-    { id:'fb14', name:'雀巢速溶咖啡（3合1）', brand:'雀巢', kcal:455, p:4.0, c:70.0, f:16.0 }
+    { id:'fc1', name:'米饭（熟）', brand:'', kcal:116, p:2.6, c:25.9, f:0.3 , fib:0.4 },
+    { id:'fc2', name:'馒头', brand:'', kcal:223, p:7.0, c:47.0, f:1.1 , unitLabel:'个', unitG:100 , fib:1.1 },
+    { id:'fc3', name:'面条（煮）', brand:'', kcal:137, p:4.5, c:27.0, f:1.0 , fib:1.2 },
+    { id:'fc4', name:'燕麦片', brand:'', kcal:377, p:13.0, c:66.0, f:7.0 , fib:10 },
+    { id:'fc5', name:'全麦面包', brand:'', kcal:246, p:9.0, c:45.0, f:3.0 , unitLabel:'片', unitG:40 , fib:7 },
+    { id:'fc6', name:'红薯（蒸）', brand:'', kcal:86, p:1.6, c:20.0, f:0.1 , unitLabel:'个', unitG:250 , fib:3 },
+    { id:'fc7', name:'玉米（煮）', brand:'', kcal:112, p:4.0, c:22.0, f:1.2 , fib:2.5 },
+    { id:'fc8', name:'土豆（煮）', brand:'', kcal:77, p:2.0, c:17.0, f:0.1 , fib:1.6 },
+    { id:'fc9', name:'鸡蛋（整）', brand:'', kcal:144, p:13.3, c:2.8, f:8.8 , unitLabel:'个', unitG:50 , fib:0 },
+    { id:'fc10', name:'鸡蛋白', brand:'', kcal:52, p:10.9, c:0.7, f:0.2 , unitLabel:'个', unitG:33 , fib:0 },
+    { id:'fc11', name:'鸡胸肉（去皮）', brand:'', kcal:133, p:24.6, c:0, f:3.2 , fib:0 },
+    { id:'fc12', name:'鸡腿肉（去皮）', brand:'', kcal:181, p:24.0, c:0, f:9.0 , fib:0 },
+    { id:'fc13', name:'瘦牛肉', brand:'', kcal:143, p:22.0, c:0, f:5.0 , fib:0 },
+    { id:'fc14', name:'猪里脊', brand:'', kcal:155, p:20.0, c:0, f:8.0 , fib:0 },
+    { id:'fc15', name:'三文鱼（生）', brand:'', kcal:208, p:20.0, c:0, f:13.0 , fib:0 },
+    { id:'fc16', name:'虾仁', brand:'', kcal:93, p:18.0, c:1.0, f:1.5 , fib:0 },
+    { id:'fc17', name:'豆腐（北）', brand:'', kcal:116, p:12.0, c:4.0, f:6.0 , fib:1.2 },
+    { id:'fc18', name:'纯牛奶（全脂）', brand:'', kcal:65, p:3.3, c:4.9, f:3.6 , unitLabel:'盒', unitG:250 , fib:0 },
+    { id:'fc19', name:'纯牛奶（低脂）', brand:'', kcal:45, p:3.4, c:5.0, f:1.5 , fib:0 },
+    { id:'fc20', name:'无糖酸奶', brand:'', kcal:63, p:3.5, c:5.0, f:3.0 , fib:0 },
+    { id:'fc21', name:'豆浆（无糖）', brand:'', kcal:31, p:3.0, c:1.2, f:1.6 , fib:0.4 },
+    { id:'fc22', name:'香蕉', brand:'', kcal:93, p:1.4, c:22.0, f:0.2 , unitLabel:'根', unitG:120 , fib:2.6 },
+    { id:'fc23', name:'苹果', brand:'', kcal:53, p:0.3, c:13.8, f:0.2 , unitLabel:'个', unitG:200 , fib:2.4 },
+    { id:'fc24', name:'橙子', brand:'', kcal:47, p:0.9, c:11.8, f:0.1 , unitLabel:'个', unitG:200 , fib:2.4 },
+    { id:'fc25', name:'牛油果', brand:'', kcal:160, p:2.0, c:8.5, f:14.7 , unitLabel:'个', unitG:140 , fib:6.7 },
+    { id:'fc26', name:'西兰花（煮）', brand:'', kcal:35, p:2.4, c:4.4, f:0.4 , fib:2.6 },
+    { id:'fc27', name:'番茄', brand:'', kcal:18, p:0.9, c:3.9, f:0.2 , fib:1.2 },
+    { id:'fc28', name:'黄瓜', brand:'', kcal:15, p:0.7, c:3.6, f:0.1 , fib:0.5 },
+    { id:'fc29', name:'生菜', brand:'', kcal:13, p:1.4, c:2.0, f:0.2 , fib:1.3 },
+    { id:'fc30', name:'花生酱', brand:'', kcal:588, p:25.0, c:20.0, f:50.0 , fib:6 },
+    { id:'fc31', name:'橄榄油', brand:'', kcal:884, p:0, c:0, f:100.0 , fib:0 },
+    { id:'fc32', name:'白砂糖', brand:'', kcal:400, p:0, c:100.0, f:0 , fib:0 },
+    { id:'fc33', name:'蜂蜜', brand:'', kcal:321, p:0.4, c:80.0, f:0 , fib:0 },
+    { id:'fc34', name:'乳清蛋白粉（每勺约30g折算100g）', brand:'', kcal:390, p:78.0, c:6.0, f:6.0 , fib:1.5 },
+    { id:'fb1', name:'特仑苏纯牛奶', brand:'蒙牛', kcal:68, p:3.6, c:5.0, f:3.8 , unitLabel:'盒', unitG:250 , fib:0 },
+    { id:'fb2', name:'蒙牛纯牛奶', brand:'蒙牛', kcal:61, p:3.2, c:4.8, f:3.2 , unitLabel:'盒', unitG:250 , fib:0 },
+    { id:'fb3', name:'伊利纯牛奶', brand:'伊利', kcal:61, p:3.2, c:4.8, f:3.2 , unitLabel:'盒', unitG:250 , fib:0 },
+    { id:'fb4', name:'可口可乐', brand:'可口可乐', kcal:43, p:0, c:10.6, f:0 , unitLabel:'瓶', unitG:330 , fib:0 },
+    { id:'fb5', name:'零度可乐', brand:'可口可乐', kcal:0, p:0, c:0, f:0 , unitLabel:'瓶', unitG:330 , fib:0 },
+    { id:'fb6', name:'元气森林气泡水', brand:'元气森林', kcal:0, p:0, c:0, f:0 , unitLabel:'瓶', unitG:480 , fib:0 },
+    { id:'fb7', name:'康师傅冰红茶', brand:'康师傅', kcal:38, p:0, c:9.6, f:0 , fib:0 },
+    { id:'fb8', name:'东方树叶乌龙茶', brand:'农夫山泉', kcal:0, p:0, c:0, f:0 , unitLabel:'瓶', unitG:500 , fib:0 },
+    { id:'fb9', name:'奥利奥原味饼干', brand:'奥利奥', kcal:490, p:4.8, c:69.0, f:21.0 , fib:2.2 },
+    { id:'fb10', name:'乐事原味薯片', brand:'乐事', kcal:536, p:6.7, c:53.0, f:33.0 , fib:4 },
+    { id:'fb11', name:'德芙牛奶巧克力', brand:'德芙', kcal:550, p:5.6, c:56.0, f:33.0 , fib:1 },
+    { id:'fb12', name:'士力架', brand:'玛氏', kcal:490, p:8.0, c:59.0, f:24.0 , fib:1.5 },
+    { id:'fb13', name:'康师傅红烧牛肉面（含调料）', brand:'康师傅', kcal:450, p:8.0, c:62.0, f:19.0 , fib:1.3 },
+    { id:'fb14', name:'雀巢速溶咖啡（3合1）', brand:'雀巢', kcal:455, p:4.0, c:70.0, f:16.0 , fib:0.5 }
   ];
   var CUSTOM_FOODS = function(){ return state.foods; };
   function allFoods(){ return FOOD_LIBRARY.concat(state.foods); }
@@ -1628,16 +1647,18 @@
   function lastNDays(n){ var out=[]; for(var i=n-1;i>=0;i--) out.push(addDaysStr(today,-i)); return out; }
   function goalsOf(){ return state.goals; }
   function weightsArr(){ var out=[]; for(var i=6;i>=0;i--){ var d=addDaysStr(today,-i); if(state.weights[d]) out.push([d, state.weights[d]]); } return out; }
+  function itemNut(e){
+    if(e.kind === 'f') return { kcal:(e.perU.kcal||0)*e.count, p:(e.perU.p||0)*e.count, c:(e.perU.c||0)*e.count, f:(e.perU.f||0)*e.count, fib:(e.perU.fib||0)*e.count };
+    var r = e.grams / 100;
+    return { kcal:(e.per.kcal||0)*r, p:(e.per.p||0)*r, c:(e.per.c||0)*r, f:(e.per.f||0)*r, fib:(e.per.fib||0)*r };
+  }
   function dietTotals(list){
-    var t = { kcal:0, p:0, c:0, f:0 };
+    var t = { kcal:0, p:0, c:0, f:0, fib:0 };
     list.forEach(function(e){
-      var r = e.grams / 100;
-      t.kcal += (e.per.kcal || 0) * r;
-      t.p += (e.per.p || 0) * r;
-      t.c += (e.per.c || 0) * r;
-      t.f += (e.per.f || 0) * r;
+      var nu = itemNut(e);
+      t.kcal += nu.kcal; t.p += nu.p; t.c += nu.c; t.f += nu.f; t.fib += nu.fib || 0;
     });
-    ['kcal','p','c','f'].forEach(function(k){ t[k] = Math.round(t[k] * 10) / 10; });
+    ['kcal','p','c','f','fib'].forEach(function(k){ t[k] = Math.round(t[k] * 10) / 10; });
     return t;
   }
 
@@ -1688,6 +1709,7 @@
           '<div class="diet-total"><b>' + gp + ' g</b><span>蛋白质</span></div>' +
           '<div class="diet-total"><b>' + Math.round(t.c) + ' g</b><span>碳水</span></div>' +
           '<div class="diet-total"><b>' + Math.round(t.f) + ' g</b><span>脂肪</span></div>' +
+          '<div class="diet-total"><b>' + Math.round(t.fib || 0) + ' g</b><span>膳食纤维</span></div>' +
         '</div>' +
         '<div class="goal-row">' +
           '<div class="goal-cell"><div class="goal-top"><span>每日热量目标</span><b id="kcalTip">' + kcalTip + '</b></div><div class="gbar"><div class="gfill k" style="width:' + kcalBar + '%"></div></div>' +
@@ -1713,10 +1735,19 @@
         '<div class="jrn-empty" id="dietEmpty" style="display:' + (list.length ? 'none' : 'block') + '">' + (list.length ? '' : '这一天还没记录食物，搜一下再加吧') + '</div>' +
         '<ul class="diet-list" id="dietList">' +
           list.map(function(e, i){
+            if(e.kind === 'f'){
+              var nu2 = itemNut(e);
+              return '<li data-i="' + i + '">' +
+                '<span class="dname">' + esc(e.name) + '</span>' +
+                '<span class="kcal" style="display:flex;align-items:center;gap:6px;"><button type="button" class="mini-btn" data-act="decF" data-i="' + i + '" style="padding:2px 8px;">−</button>×' + e.count + '<button type="button" class="mini-btn" data-act="incF" data-i="' + i + '" style="padding:2px 8px;">＋</button></span>' +
+                '<span class="kcal">' + Math.round(nu2.kcal) + ' kcal</span>' +
+                '<button type="button" class="act del" data-act="delDiet" data-i="' + i + '" title="移除">×</button>' +
+              '</li>';
+            }
             return '<li data-i="' + i + '">' +
-              '<span class="dname">' + esc(e.name) + '</span>' +
+              '<span class="dname">' + esc(e.name) + (e.label ? ' <i class="qty-tag">' + esc(e.label) + '</i>' : '') + '</span>' +
               '<input class="gram-in" data-i="' + i + '" type="number" min="0" step="10" value="' + e.grams + '">' +
-              '<span class="kcal">' + Math.round((e.per.kcal||0)*e.grams/100) + ' kcal</span>' +
+              '<span class="kcal">' + Math.round(itemNut(e).kcal) + ' kcal</span>' +
               '<button type="button" class="act del" data-act="delDiet" data-i="' + i + '" title="移除">×</button>' +
             '</li>';
           }).join('') +
@@ -1729,16 +1760,38 @@
       '<div class="overlay" id="foodOverlay" hidden>' +
         '<div class="card note-dialog">' +
           '<p class="note-title">自建食物 / 品牌</p>' +
-          '<p class="note-sub">按包装上的「每 100 克」填写（单位 kcal / g）</p>' +
-          '<div class="cf-field"><div class="cf-label">名称</div><input id="cfName" type="text" maxlength="30" placeholder="如：某品牌全麦吐司"></div>' +
-          '<div class="cf-field"><div class="cf-label">品牌（可选）</div><input id="cfBrand" type="text" maxlength="30"></div>' +
-          '<div class="cf-grid">' +
-            '<div><div class="cf-label">热量 kcal</div><input id="cfKcal" type="number" min="0" placeholder="0"></div>' +
-            '<div><div class="cf-label">蛋白质 g</div><input id="cfP" type="number" min="0" step="0.1" placeholder="0"></div>' +
-            '<div><div class="cf-label">碳水 g</div><input id="cfC" type="number" min="0" step="0.1" placeholder="0"></div>' +
-            '<div><div class="cf-label">脂肪 g</div><input id="cfF" type="number" min="0" step="0.1" placeholder="0"></div>' +
+          '<div class="cf-field"><div class="cf-label">产品类型</div>' +
+            '<label style="margin-right:14px;font-size:14px;color:var(--ink);"><input type="radio" name="cfMode" id="cfModeW" checked> 按克（营养 / 100g）</label>' +
+            '<label style="font-size:14px;color:var(--ink);"><input type="radio" name="cfMode" id="cfModeF"> 固定装 / 份（每份营养）</label>' +
           '</div>' +
-          '<div class="note-actions"><button type="button" class="btn ghost" data-act="cancelCustom">取消</button><span class="spacer"></span><button type="button" class="btn primary" data-act="saveCustom">保存并加入</button></div>' +
+          '<div class="cf-field"><div class="cf-label">名称</div><input id="cfName" type="text" maxlength="30" placeholder="如：某品牌蛋白棒"></div>' +
+          '<div class="cf-field"><div class="cf-label">品牌（可选）</div><input id="cfBrand" type="text" maxlength="30"></div>' +
+          '<div id="cfWeightWrap">' +
+            '<p class="note-sub">每 100 克所含（kcal / g）</p>' +
+            '<div class="cf-grid">' +
+              '<div><div class="cf-label">热量 kcal</div><input id="cfKcal" type="number" min="0" placeholder="0"></div>' +
+              '<div><div class="cf-label">蛋白质 g</div><input id="cfP" type="number" min="0" step="0.1" placeholder="0"></div>' +
+              '<div><div class="cf-label">碳水 g</div><input id="cfC" type="number" min="0" step="0.1" placeholder="0"></div>' +
+              '<div><div class="cf-label">脂肪 g</div><input id="cfF" type="number" min="0" step="0.1" placeholder="0"></div>' +
+              '<div><div class="cf-label">膳食纤维 g</div><input id="cfFib" type="number" min="0" step="0.1" placeholder="0"></div>' +
+            '</div>' +
+            '<div class="cf-grid">' +
+              '<div><div class="cf-label">自然单位名（可选，个/片/根）</div><input id="cfUnitLabel" type="text" maxlength="6" placeholder="如：个"></div>' +
+              '<div><div class="cf-label">每单位克数</div><input id="cfUnitG" type="number" min="0" step="1" placeholder="如：50"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div id="cfFixedWrap" hidden>' +
+            '<p class="note-sub">每一份 / 个 / 包所含（kcal / g）</p>' +
+            '<div class="cf-field"><div class="cf-label">份单位名</div><input id="cfFUnit" type="text" maxlength="6" value="份" placeholder="如：根/包/瓶/个"></div>' +
+            '<div class="cf-grid">' +
+              '<div><div class="cf-label">每份热量 kcal</div><input id="cfFKcal" type="number" min="0" placeholder="0"></div>' +
+              '<div><div class="cf-label">每份蛋白 g</div><input id="cfFP" type="number" min="0" step="0.1" placeholder="0"></div>' +
+              '<div><div class="cf-label">每份碳水 g</div><input id="cfFC" type="number" min="0" step="0.1" placeholder="0"></div>' +
+              '<div><div class="cf-label">每份脂肪 g</div><input id="cfFF" type="number" min="0" step="0.1" placeholder="0"></div>' +
+              '<div><div class="cf-label">每份纤维 g</div><input id="cfFFib" type="number" min="0" step="0.1" placeholder="0"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="note-actions"><button type="button" class="btn ghost" data-act="cancelCustom">取消</button><span class="spacer"></span><button type="button" class="btn primary" data-act="saveCustom">保存</button></div>' +
         '</div>' +
       '</div>';
     fitDietView.innerHTML = html;
@@ -1752,8 +1805,10 @@
     box.innerHTML = list.length
       ? '<ul class="food-list">' + list.map(function(f){
           return '<li>' +
-            '<span class="food-name"><b>' + esc(f.name) + (f.brand ? ' <i style="font-style:normal;color:var(--ink-3);font-size:11px;">' + esc(f.brand) + '</i>' : '') + '</b>' +
-            '<span>' + f.kcal + ' kcal · 蛋白 ' + f.p + 'g · 碳水 ' + f.c + 'g · 脂肪 ' + f.f + 'g /100g</span></span>' +
+            '<span class="food-name"><b>' + esc(f.name) + (f.brand ? ' <i style="font-style:normal;color:var(--ink-3);font-size:11px;">' + esc(f.brand) + '</i>' : '') + (f.kind === 'f' ? ' <i style="font-style:normal;color:var(--blue);font-size:10.5px;">固定装</i>' : '') + '</b>' +
+            '<span>' + (f.kind === 'f'
+              ? '每' + (f.unitLabel || '份') + '：' + Math.round(f.perU ? f.perU.kcal||0 : 0) + ' kcal · 蛋白 ' + (f.perU ? f.perU.p||0 : 0) + 'g · 碳水 ' + (f.perU ? f.perU.c||0 : 0) + 'g · 脂肪 ' + (f.perU ? f.perU.f||0 : 0) + 'g · 纤维 ' + (f.perU ? f.perU.fib||0 : 0) + 'g'
+              : f.kcal + ' kcal · 蛋白 ' + f.p + 'g · 碳水 ' + f.c + 'g · 脂肪 ' + f.f + 'g · 纤维 ' + (f.fib||0) + 'g /100g') + '</span></span>' +
             '<button type="button" class="add-food" data-act="addFood" data-id="' + f.id + '">＋</button>' +
           '</li>';
         }).join('') + '</ul>'
@@ -1766,8 +1821,81 @@
     return null;
   }
   function addDietEntry(food, grams){
-    ensureDietArr(dietSelDate).push({ id: uid(), name: food.name, grams: grams, per: { kcal: food.kcal||0, p: food.p||0, c: food.c||0, f: food.f||0 } });
+    ensureDietArr(dietSelDate).push({ id: uid(), name: food.name, grams: grams, per: { kcal: food.kcal||0, p: food.p||0, c: food.c||0, f: food.f||0, fib: food.fib||0 } });
     save(); renderDiet();
+  }
+  function addDietFixed(food, count){
+    ensureDietArr(dietSelDate).push({
+      id: uid(), name: food.name, kind: 'f', count: count, unitLabel: food.unitLabel || '份',
+      perU: { kcal: food.perU ? food.perU.kcal||0 : 0, p: food.perU ? food.perU.p||0 : 0, c: food.perU ? food.perU.c||0 : 0, f: food.perU ? food.perU.f||0 : 0, fib: food.perU ? food.perU.fib||0 : 0 }
+    });
+    save(); renderDiet();
+  }
+  function openFixedQty(food){
+    var box = $('foodResults'); if(!box) return;
+    pendingFood = food;
+    var ul = food.unitLabel || '份';
+    var line = food.perU ? '每' + ul + '：' + Math.round(food.perU.kcal||0) + ' kcal · 蛋白 ' + (food.perU.p||0) + 'g · 碳水 ' + (food.perU.c||0) + 'g · 脂肪 ' + (food.perU.f||0) + 'g · 纤维 ' + (food.perU.fib||0) + 'g' : '';
+    box.innerHTML = '<div class="qty-panel">' +
+      '<div class="qty-title">' + esc(food.name) + (food.brand ? '（' + esc(food.brand) + '）' : '') + ' <span class="qty-tag">固定装</span></div>' +
+      (line ? '<p class="fit-note" style="margin:0 0 8px;">' + line + '</p>' : '') +
+      '<div class="qty-row">' +
+        [1,2,3,4,5].map(function(x){ return '<button type="button" class="btn primary" data-act="fixedQuick" data-q="' + x + '">×' + x + '</button>'; }).join('') +
+        '<button type="button" class="btn ghost" data-act="cancelQty">取消</button>' +
+      '</div>' +
+      '<p class="fit-note" style="margin:5px 0 0;">点 ×1/×2/×3… 直接添加' + ul + '数</p>' +
+    '</div>';
+  }
+  function qtyOptions(f){
+    var o = [{ v:'g', t:'克' }, { v:'f', t:'份' }];
+    if(f.unitLabel && f.unitG) o.push({ v:'u', t:f.unitLabel });
+    return o;
+  }
+  function qtyGrams(f, unit, qty, fGram){
+    if(unit === 'u') return qty * (f.unitG || 100);
+    if(unit === 'f') return qty * (Math.max(1, +fGram || 100));
+    return qty;
+  }
+  function qtyText(f, unit, qty){
+    if(unit === 'u') return qty + f.unitLabel;
+    if(unit === 'f') return qty + '份';
+    return qty + '克';
+  }
+  var pendingFood = null;
+  function addDietFood(food, unit, qty, fGram){
+    if(unit === 'f'){
+      var fg2 = Math.max(1, +fGram || 100);
+      state.foodServing = state.foodServing || {};
+      state.foodServing[food.id] = fg2;
+    }
+    var grams = Math.max(1, Math.round(qtyGrams(food, unit, qty, fGram) * 10) / 10);
+    ensureDietArr(dietSelDate).push({
+      id: uid(), name: food.name, grams: grams, label: qtyText(food, unit, qty),
+      per: { kcal: food.kcal||0, p: food.p||0, c: food.c||0, f: food.f||0, fib: food.fib||0 }
+    });
+    save(); renderDiet();
+  }
+  function openQty(food){
+    var box = $('foodResults'); if(!box) return;
+    pendingFood = food;
+    var opts = qtyOptions(food).map(function(o){
+      return '<option value="' + o.v + '">' + o.t + '</option>';
+    }).join('');
+    var hint = food.unitLabel && food.unitG ? food.unitLabel + '：每' + food.unitLabel + '约 ' + food.unitG + 'g' : '';
+    var fg = state.foodServing && state.foodServing[food.id] ? state.foodServing[food.id] : 100;
+    box.innerHTML = '<div class="qty-panel">' +
+      '<div class="qty-title">' + esc(food.name) + (food.brand ? '（' + esc(food.brand) + '）' : '') + '</div>' +
+      '<div class="qty-row">' +
+        '<input id="qtyNum" type="number" min="0.1" step="0.5" value="1">' +
+        '<select id="qtyUnit">' + opts + '</select>' +
+        '<button type="button" class="btn primary" data-act="addFoodQty">添加</button>' +
+        '<button type="button" class="btn ghost" data-act="cancelQty">取消</button>' +
+      '</div>' +
+      '<div class="qty-f" id="qtyFwrap" hidden>' +
+        '<label style="font-size:12.5px;color:var(--ink-2);">1 份 = <input id="qtyF" type="number" min="1" step="1" value="' + fg + '"> 克（可自定，会记住）</label>' +
+      '</div>' +
+      '<p class="fit-note" style="margin:5px 0 0;">克=按克数；份=按你设的克数算' + (hint ? '；' + hint : '') + '</p>' +
+    '</div>';
   }
   function openFoodOverlay(){
     var ov = $('foodOverlay');
@@ -1971,11 +2099,29 @@
     if(!b) return;
     var act = b.getAttribute('data-act');
     if(act === 'dietNav'){ setDietDate(addDaysStr(dietSelDate, +b.getAttribute('data-d'))); }
-    else if(act === 'addFood'){ var f = pickFood(b.getAttribute('data-id')); if(f) addDietEntry(f, 100); }
+    else if(act === 'addFood'){ var f = pickFood(b.getAttribute('data-id')); if(f){ if(f.kind === 'f') openFixedQty(f); else openQty(f); } }
+    else if(act === 'addFoodQty'){
+      var qn = $('qtyNum'), qu = $('qtyUnit'), qf = $('qtyF');
+      if(pendingFood && qn && qu){ addDietFood(pendingFood, qu.value, Math.max(0, +qn.value || 1), qf ? (+qf.value || 100) : 100); pendingFood = null; }
+    }
+    else if(act === 'cancelQty'){ pendingFood = null; updateFoodResults(''); }
     else if(act === 'delDiet'){
       var i = +b.getAttribute('data-i');
       var arr = dietEntries();
       if(arr[i]){ arr.splice(i,1); save(); renderDiet(); }
+    }
+    else if(act === 'incF' || act === 'decF'){
+      var i2 = +b.getAttribute('data-i');
+      var arr2 = dietEntries();
+      if(arr2[i2] && arr2[i2].kind === 'f'){
+        arr2[i2].count = Math.max(1, arr2[i2].count + (act === 'incF' ? 1 : -1));
+        arr2[i2].label = arr2[i2].count + (arr2[i2].unitLabel || '份');
+        save(); renderDiet();
+      }
+    }
+    else if(act === 'fixedQuick'){
+      var qf = +b.getAttribute('data-q');
+      if(pendingFood){ addDietFixed(pendingFood, Math.max(1, qf)); pendingFood = null; }
     }
     else if(act === 'addCustomFood'){ openFoodOverlay(); }
     else if(act === 'onlineSearch'){ searchOnline(); }
@@ -1993,11 +2139,15 @@
     if(ev.target.classList.contains('gram-in')){
       var i = +ev.target.getAttribute('data-i');
       var arr = dietEntries();
-      if(arr[i]){ arr[i].grams = Math.max(0, +ev.target.value || 0); save(); renderDiet(); }
+      if(arr[i] && arr[i].kind !== 'f'){ arr[i].grams = Math.max(0, +ev.target.value || 0); arr[i].label = arr[i].grams + '克'; save(); renderDiet(); }
     }
   });
 
   fitDietView.addEventListener('change', function(ev){
+    if(ev.target.id === 'qtyUnit'){
+      var w = $('qtyFwrap'); if(w) w.hidden = ev.target.value !== 'f';
+      return;
+    }
     var id = ev.target.id;
     if(id === 'goalKcal' || id === 'goalProtein'){
       var g2 = goalsOf();
@@ -2012,11 +2162,28 @@
     }
   });
 
+  fitDietView.addEventListener('change', function(ev){
+    if(ev.target.id === 'cfModeW' || ev.target.id === 'cfModeF'){
+      var isF = ev.target.id === 'cfModeF';
+      var ww = $('cfWeightWrap'), fw = $('cfFixedWrap');
+      if(ww) ww.style.display = isF ? 'none' : '';
+      if(fw) fw.hidden = !isF;
+    }
+  });
+
   function saveCustomFood(){
     var nm = $('cfName').value.trim(), br = $('cfBrand').value.trim();
-    var k = +$('cfKcal').value || 0, pp = +$('cfP').value || 0, cc = +$('cfC').value || 0, ff = +$('cfF').value || 0;
+    var isF = $('cfModeF') && $('cfModeF').checked;
     if(!nm){ return; }
-    state.foods.push({ id: uid(), name: nm, brand: br, kcal: k, p: pp, c: cc, f: ff });
+    if(isF){
+      var fun = ($('cfFUnit').value.trim() || '份');
+      state.foods.push({ id: uid(), name: nm, brand: br, kind: 'f', unitLabel: fun,
+        perU: { kcal: +$('cfFKcal').value || 0, p: +$('cfFP').value || 0, c: +$('cfFC').value || 0, f: +$('cfFF').value || 0, fib: +$('cfFFib').value || 0 } });
+    } else {
+      var k = +$('cfKcal').value || 0, pp = +$('cfP').value || 0, cc = +$('cfC').value || 0, ff = +$('cfF').value || 0, fib = +$('cfFib').value || 0;
+      var ul = $('cfUnitLabel').value.trim(); var ug = +$('cfUnitG').value || 0;
+      state.foods.push({ id: uid(), name: nm, brand: br, kcal: k, p: pp, c: cc, f: ff, fib: fib, unitLabel: ul || '', unitG: ug || 0 });
+    }
     save(); renderDiet();
     var ov = $('foodOverlay'); if(ov) ov.hidden = true;
     var q = $('foodSearch'); if(q) q.value = nm;
@@ -2150,13 +2317,14 @@
   var SYNC_KEY = 'habit-sync-v1';
   function syncRead(){
     try{ var o = JSON.parse(localStorage.getItem(SYNC_KEY)); if(o && typeof o === 'object') return o; }catch(e){}
-    return { mode:'local', url:'', anon:'', access:'', refresh:'', id:'', email:'', lastSync:null, dirty:false };
+    return { mode:'local', url:'', anon:'', access:'', refresh:'', id:'', email:'', lastSync:null, dirty:false, remember:true };
   }
   function syncWrite(c){ try{ localStorage.setItem(SYNC_KEY, JSON.stringify(c)); }catch(e){} }
   var syncConf = syncRead();
   function localCapable(){ return location.protocol === 'http:'; }
   function isPublicHost(){ return /github\.io/i.test(location.hostname || ''); }
   if(!syncConf.mode) syncConf.mode = (syncConf.url && syncConf.anon) ? 'supabase' : 'local';
+  if(syncConf.remember === undefined) syncConf.remember = true;
   if(isPublicHost() && syncConf.mode === 'local') syncConf.mode = 'supabase';
   var syncBusy = false, syncTimer = null;
 
@@ -2324,8 +2492,15 @@
       syncWrite(syncConf);
       setSyncStatus('已同步' + (syncConf.email ? ' · ' + syncConf.email : '') + syncTimeLabel());
     }catch(err){
-      syncConf.dirty = true; syncWrite(syncConf);
-      setSyncStatus('同步失败（待同步）：' + (err && err.message || err));
+      var em = String(err && err.message || err);
+      if(em.indexOf('未登录') >= 0 || em.indexOf('401') >= 0){
+        syncConf.access = ''; syncConf.refresh = ''; syncConf.email = '';
+        syncWrite(syncConf);
+        setSyncStatus('登录已失效，请重新登录（页面可继续本地使用）');
+      } else {
+        syncConf.dirty = true; syncWrite(syncConf);
+        setSyncStatus('同步失败（待同步）：' + em);
+      }
     }
     syncBusy = false;
   }
@@ -2340,6 +2515,8 @@
     $('syncAnon').value = syncConf.anon;
     $('syncEmail').value = syncConf.email || '';
     $('syncPass').value = '';
+    var rb = $('syncRemember'); if(rb) rb.checked = !!syncConf.remember;
+    var rs = $('syncReset'); if(rs) rs.hidden = !local;
     if(local && isPublicHost()){ setSyncStatus('公网版没有「本机服务」。要用本机同步请回 http://127.0.0.1:8000；这里可切换 Supabase，或不注册直接用（数据在本浏览器）。'); return; }
     if(local && !isHttp()){ setSyncStatus('本机模式：请用 http://127.0.0.1:8000 打开此页'); return; }
     if(syncConf.access){ setSyncStatus('已登录 ' + syncConf.email + (syncConf.dirty ? ' · 有待同步更改' : '') + syncTimeLabel()); }
@@ -2381,6 +2558,38 @@
     syncWrite(syncConf); renderSyncPanel();
   });
   $('syncNowBtn').addEventListener('click', function(){ syncNow(true); });
+  $('syncReset').addEventListener('click', async function(){
+    var em = $('syncEmail').value.trim(), pw = $('syncPass').value;
+    if(!em || !pw){ setSyncStatus('请先输入邮箱，并在密码框输入新密码'); return; }
+    if(syncConf.mode !== 'local'){ setSyncStatus('重置仅支持本机服务模式'); return; }
+    if(!window.confirm('将把本机账号「' + em + '」的密码重置为当前输入的密码（≥6位），继续？')) return;
+    try{
+      var r = await fetch('/api/reset', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ email: em, newPassword: pw }) });
+      var d = {};
+      try{ d = await r.json(); }catch(e){}
+      if(!r.ok || d.ok === false){ throw new Error(d.msg || ('HTTP ' + r.status)); }
+      setSyncStatus('密码已重置，请点「登录」');
+      await doAuth('login', em, pw);
+      await syncNow(true);
+    }catch(err){ setSyncStatus('重置失败：' + (err && err.message || err)); }
+  });
+  var syncRememberEl = $('syncRemember');
+  syncRememberEl.addEventListener('change', function(){
+    syncConf.remember = syncRememberEl.checked;
+    syncWrite(syncConf);
+    if(!syncConf.remember) setSyncStatus('已关闭自动登录（本次登录仍有效）');
+  });
+  function autoRestoreSession(){
+    if(!syncConf.access || syncConf.remember === false) return;
+    if(syncConf.mode === 'local' && !isHttp()) return;
+    setTimeout(function(){ syncNow(false); }, 800);
+  }
+  window.addEventListener('beforeunload', function(){
+    if(syncConf.remember === false && syncConf.access){
+      syncConf.access = ''; syncConf.refresh = ''; syncWrite(syncConf);
+    }
+  });
+  autoRestoreSession();
 
   // ---- 安装为 App 按钮 ----
   var deferredPrompt = null;

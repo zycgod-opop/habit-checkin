@@ -519,6 +519,48 @@
   .qty-f{margin-top:8px;}
   .qty-f input{width:64px;border:1px solid var(--line-strong);border-radius:8px;padding:5px 7px;font-size:13.5px;background:#fff;color:var(--ink);outline:none;font-family:inherit;text-align:right;}
 
+
+  /* 4 tabs */
+  .tabs{max-width:430px;}
+  .tab{padding:9px 2px;}
+
+  /* bullet journal */
+  .bj-top{text-align:center;margin:0 0 14px;}
+  .bj-date-big{font-size:22px;font-weight:800;color:var(--ink);}
+  .bj-date-sub{font-size:12.5px;color:var(--ink-3);margin-top:2px;}
+  .bj-add{display:flex;gap:8px;margin:12px 0 4px;flex-wrap:wrap;}
+  .bj-add input{flex:1;min-width:160px;border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;font-size:14px;background:#fff;color:var(--ink);outline:none;font-family:inherit;}
+  .bj-add input:focus{border-color:var(--red);}
+  .bj-type{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 6px;}
+  .bj-chip{border:1px solid var(--line-strong);background:var(--surface);border-radius:99px;padding:4px 11px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-2);font-family:inherit;}
+  .bj-chip.sel{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .bj-card{padding:12px 8px;}
+  .bj-list{list-style:none;margin:0;padding:0;}
+  .bj-list li{display:flex;align-items:flex-start;gap:8px;padding:7px 6px;}
+  .bj-list li + li{border-top:1px solid var(--line);}
+  .bj-sym{flex:none;width:18px;font-weight:800;text-align:center;}
+  .bj-sym.task{color:var(--blue);}
+  .bj-sym.event{color:var(--red);}
+  .bj-sym.note{color:var(--ink-3);}
+  .bj-text{flex:1;font-size:14px;line-height:1.6;color:var(--ink);word-break:break-word;}
+  .bj-text.done{text-decoration:line-through;color:var(--ink-3);}
+  .bj-taskbtn{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid #c6cede;background:#fff;cursor:pointer;font-size:12px;line-height:1;color:transparent;padding:0;}
+  .bj-taskbtn.done{background:var(--red);border-color:var(--red);color:#fff;}
+  .bj-mini{border:none;background:var(--surface-2);color:var(--ink-2);border-radius:7px;padding:2px 7px;font-size:11px;cursor:pointer;font-family:inherit;border:1px solid var(--line);}
+  .bj-mini:hover{color:var(--red);}
+  .bj-del{color:#c3cad8;}
+  .bj-empty{color:var(--ink-3);font-size:13px;text-align:center;padding:18px 4px;}
+  .bj-mon{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:6px;}
+  .bj-mon .w{text-align:center;font-size:10.5px;color:var(--ink-3);padding:2px 0;}
+  .bj-mon .c{text-align:center;font-size:12px;padding:5px 0;border-radius:7px;color:var(--ink-2);cursor:pointer;}
+  .bj-mon .c:hover{background:var(--surface-2);}
+  .bj-mon .c.sel{background:var(--ink);color:#fff;}
+  .bj-mon .c .ct{font-size:9px;color:var(--red);}
+  .bj-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .bj-day-cell{border:none;background:transparent;color:var(--blue);font-size:13px;font-weight:700;cursor:pointer;}
+  .bj-day-cell:disabled{opacity:.4;}
+  .bj-key{font-size:11.5px;color:var(--ink-3);line-height:1.8;margin-top:8px;}
+
 </style>
 </head>
 <body>
@@ -535,6 +577,7 @@
         <button type="button" id="tabTodayBtn" class="tab active" role="tab" aria-selected="true">今日</button>
         <button type="button" id="tabStatsBtn" class="tab" role="tab" aria-selected="false">统计</button>
         <button type="button" id="tabFitBtn" class="tab" role="tab" aria-selected="false">健身</button>
+        <button type="button" id="tabJournalBtn" class="tab" role="tab" aria-selected="false">心得</button>
       </nav>
     </header>
 
@@ -574,7 +617,7 @@
       <div id="archivedWrap"></div>
       </div>
     
-      <section class="card journal-card">
+      <section class="card journal-card" style="display:none;">
         <div class="journal-head">
           <span class="journal-label">每日心得</span>
           <span class="journal-state" id="journalState"></span>
@@ -611,6 +654,11 @@
       </div>
       <div id="fitDietView"></div>
       <div id="fitTrainView" hidden></div>
+    </section>
+
+    <!-- 心得·子弹笔记 -->
+    <section id="viewJournal" hidden>
+      <div id="journalBody"></div>
     </section>
 
     <footer>
@@ -743,7 +791,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {} }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {} }; }
 
   function load(){
     try{
@@ -761,6 +809,7 @@
       raw.goals = (raw.goals && typeof raw.goals === 'object') ? { kcal: +raw.goals.kcal || 0, protein: +raw.goals.protein || 0 } : { kcal: 0, protein: 0 };
       raw.weights = (raw.weights && typeof raw.weights === 'object') ? raw.weights : {};
       raw.foodServing = (raw.foodServing && typeof raw.foodServing === 'object') ? raw.foodServing : {};
+      raw.bullets = (raw.bullets && typeof raw.bullets === 'object') ? raw.bullets : {};
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1079,16 +1128,18 @@
 
   // ---- 视图切换 ----
   function showView(name){
-    var views = { today: viewToday, stats: viewStats, fit: viewFit };
-    for(var k in views){ views[k].hidden = (k !== name); }
-    var tabs = { today: tabTodayBtn, stats: tabStatsBtn, fit: tabFitBtn };
+    var views = { today: viewToday, stats: viewStats, fit: viewFit, journal: viewJournal };
+    for(var k in views){ if(views[k]) views[k].hidden = (k !== name); }
+    var tabs = { today: tabTodayBtn, stats: tabStatsBtn, fit: tabFitBtn, journal: tabJournalBtn };
     for(var k2 in tabs){
+      if(!tabs[k2]) continue;
       var on = (k2 === name);
       tabs[k2].classList.toggle('active', on);
       tabs[k2].setAttribute('aria-selected', on ? 'true' : 'false');
     }
     if(name === 'stats'){ renderStats(); }
     else if(name === 'fit'){ fitRefreshAll(); }
+    else if(name === 'journal'){ renderJournal(); }
     else { renderDate(); }
   }
 
@@ -1506,6 +1557,7 @@
   tabTodayBtn.addEventListener('click', function(){ showView('today'); });
   tabStatsBtn.addEventListener('click', function(){ showView('stats'); });
   tabFitBtn.addEventListener('click', function(){ showView('fit'); });
+  $('tabJournalBtn').addEventListener('click', function(){ showView('journal'); });
   $('prevMonthBtn').addEventListener('click', function(){ changeMonth(-1); });
   $('nextMonthBtn').addEventListener('click', function(){ changeMonth(1); });
   backTodayBtn.addEventListener('click', function(){
@@ -1558,7 +1610,8 @@
           trainDays: (data.trainDays && typeof data.trainDays === 'object') ? data.trainDays : {},
           goals: (data.goals && typeof data.goals === 'object') ? { kcal: +data.goals.kcal || 0, protein: +data.goals.protein || 0 } : { kcal: 0, protein: 0 },
           weights: (data.weights && typeof data.weights === 'object') ? data.weights : {},
-          foodServing: (data.foodServing && typeof data.foodServing === 'object') ? data.foodServing : {}
+          foodServing: (data.foodServing && typeof data.foodServing === 'object') ? data.foodServing : {},
+          bullets: (data.bullets && typeof data.bullets === 'object') ? data.bullets : {}
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -1739,7 +1792,7 @@
               var nu2 = itemNut(e);
               return '<li data-i="' + i + '">' +
                 '<span class="dname">' + esc(e.name) + '</span>' +
-                '<span class="kcal" style="display:flex;align-items:center;gap:6px;"><button type="button" class="mini-btn" data-act="decF" data-i="' + i + '" style="padding:2px 8px;">−</button>×' + e.count + '<button type="button" class="mini-btn" data-act="incF" data-i="' + i + '" style="padding:2px 8px;">＋</button></span>' +
+                '<span class="kcal" style="display:flex;align-items:center;gap:6px;"><button type="button" class="mini-btn" data-act="decF" data-i="' + i + '" style="padding:2px 8px;" title="减一份">−1</button>×' + e.count + '<button type="button" class="mini-btn" data-act="incF" data-i="' + i + '" style="padding:2px 8px;" title="再加一份">＋1份</button></span>' +
                 '<span class="kcal">' + Math.round(nu2.kcal) + ' kcal</span>' +
                 '<button type="button" class="act del" data-act="delDiet" data-i="' + i + '" title="移除">×</button>' +
               '</li>';
@@ -2652,6 +2705,145 @@
     } else {
       showInstallHelp();
     }
+  });
+
+  // ================= 心得 · 子弹笔记 =================
+  var viewJournal = $('viewJournal'), tabJournalBtn = $('tabJournalBtn');
+  var jDate = today;
+  var jType = 'task';
+  var BJ_T = { task:'•', event:'○', note:'–' };
+
+  function jBulk(date){ return state.bullets[date] || []; }
+  function jMonthDays(yy, mm){ return new Date(yy, mm+1, 0).getDate(); }
+  function jMonthLabel(ds){ var p=ds.split('-'); return (+p[0])+'年'+(+p[1])+'月'; }
+  function jWday(ds){ var p=ds.split('-'); return WEEK[new Date(+p[0],+p[1]-1,+p[2]).getDay()]; }
+
+  function renderJournal(){
+    var ds = jDate;
+    var arr = jBulk(ds);
+    var todayFlag = ds === today;
+    var futureFlag = ds > today;
+    var rows = [];
+    if(!arr.length){ rows.push('<div class="bj-empty">这一天还没有记录。选个类型（•任务 / ○事件 / –笔记），写下第一行吧</div>'); }
+    else {
+      arr.forEach(function(b, i){
+        var sym = '<span class="bj-sym ' + b.t + '">' + BJ_T[b.t] + '</span>';
+        var cb = b.t === 'task'
+          ? '<button type="button" class="bj-taskbtn' + (b.done ? ' done' : '') + '" data-act="taskTog" data-i="' + i + '">✓</button>'
+          : '';
+        var move = (b.t === 'task' && !b.done)
+          ? '<button type="button" class="bj-mini" data-act="moveT" data-i="' + i + '" title="迁移到明天">→明日</button>'
+          : '';
+        rows.push('<li>' + sym + cb +
+          '<span class="bj-text' + (b.done ? ' done' : '') + '">' + esc(b.text) + '</span>' +
+          move +
+          '<button type="button" class="bj-mini bj-del" data-act="delB" data-i="' + i + '">×</button></li>');
+      });
+    }
+
+    var oldJ = state.journal[ds];
+    var oldBlock = (oldJ && oldJ.trim())
+      ? '<details style="margin-top:10px;"><summary style="font-size:12px;color:var(--ink-3);cursor:pointer;">旧版每日心得（'+fmtCN(ds)+'）</summary><p style="white-space:pre-wrap;font-size:13px;color:var(--ink-2);line-height:1.7;margin:6px 0 0;">'+esc(oldJ)+'</p></details>'
+      : '';
+
+    // month calendar
+    var y = +ds.slice(0,4), m = +ds.slice(5,7)-1, dim = jMonthDays(y, m);
+    var lead = (new Date(y,m,1).getDay()+6)%7;
+    var monCells = [];
+    for(var w2=0; w2<7; w2++) monCells.push('<div class="w">'+WEEKS_MON[w2]+'</div>');
+    for(var b2=0; b2<lead; b2++) monCells.push('<div class="c"></div>');
+    for(var d2=1; d2<=dim; d2++){
+      var cds = y+'-'+pad(m+1)+'-'+pad(d2);
+      var cnt = jBulk(cds).filter(function(x){ return !x.done; }).length;
+      var cls = 'c' + (cds === ds ? ' sel' : '');
+      monCells.push('<div class="'+cls+'" data-act="dayGo" data-date="'+cds+'">' + d2 + (cnt ? '<div class="ct">•' + cnt + '</div>' : '') + '</div>');
+    }
+    // future log
+    var fut = [];
+    Object.keys(state.bullets).forEach(function(k){
+      if(k > today){
+        state.bullets[k].forEach(function(b){ if(!b.done) fut.push({ k:k, b:b }); });
+      }
+    });
+    fut.sort(function(a,b2){ return a.k < b2.k ? -1 : 1; });
+    var futHtml = fut.length
+      ? '<ul class="bj-list">' + fut.slice(0,30).map(function(o){
+          return '<li><span class="bj-sym ' + o.b.t + '">' + BJ_T[o.b.t] + '</span><span class="bj-text">' + (+o.k.slice(5,7)) + '/' + (+o.k.slice(8,10)) + ' · ' + esc(o.b.text) + '</span><button type="button" class="bj-mini" data-act="dayGo" data-date="'+o.k+'">去看</button></li>';
+        }).join('') + '</ul>'
+      : '<div class="bj-empty">没有待办的未来记录</div>';
+
+    viewJournal.innerHTML = '<div id="journalBody"></div>';
+    $('journalBody').innerHTML =
+      '<div class="card fit-card">' +
+        '<div class="wk-nav">' +
+          '<button type="button" class="wk-arrow" data-act="dayPrev">‹</button>' +
+          '<div style="text-align:center;"><div class="bj-date-big">' + fmtCN(ds) + '</div><div class="bj-date-sub">星期' + jWday(ds) + (todayFlag ? ' · 今天' : (futureFlag ? ' · 未来' : ' · 回顾')) + '</div></div>' +
+          '<button type="button" class="wk-arrow" data-act="dayNext"' + (ds >= addDaysStr(today, 366) ? ' disabled' : '') + '>›</button>' +
+        '</div>' +
+        '<div class="bj-type">' +
+          '<button type="button" class="bj-chip' + (jType==='task' ? ' sel' : '') + '" data-act="bjType" data-t="task">• 任务</button>' +
+          '<button type="button" class="bj-chip' + (jType==='event' ? ' sel' : '') + '" data-act="bjType" data-t="event">○ 事件</button>' +
+          '<button type="button" class="bj-chip' + (jType==='note' ? ' sel' : '') + '" data-act="bjType" data-t="note">– 笔记</button>' +
+        '</div>' +
+        '<div class="bj-add"><input id="bjInput" type="text" maxlength="200" placeholder="写一条' + (jType==='task' ? '任务（完成时点圆圈划掉）' : jType==='event' ? '事件' : '笔记') + '，回车添加…"><button type="button" class="btn primary" data-act="bjAdd" style="padding:9px 14px;">添加</button></div>' +
+        '<div class="bj-key">• 任务（完成→点圆圈变 X 划掉） · ○ 事件 · – 笔记 · 任务可「→明日」迁移 · 数字为当天未完成条数</div>' +
+        '<ul class="bj-list">' + rows.join('') + '</ul>' + oldBlock +
+      '</div>' +
+      '<div class="card fit-card">' +
+        '<div class="bj-month-nav"><button type="button" class="bj-day-cell" data-act="monNav" data-d="-1">‹ 上月</button>' +
+        '<b style="font-size:14px;">' + jMonthLabel(ds) + '</b>' +
+        '<button type="button" class="bj-day-cell" data-act="monNav" data-d="1">下月 ›</button></div>' +
+        '<div class="bj-mon">' + monCells.join('') + '</div>' +
+      '</div>' +
+      '<div class="card fit-card"><b style="font-size:14px;display:block;padding:4px 6px 2px;">未来日志</b>' + futHtml + '</div>';
+  }
+
+  function bjSave(){ save(); }
+  function addBulletLine(ds){
+    var inp = $('bjInput'); if(!inp) return;
+    var t = inp.value.trim(); if(!t) return;
+    state.bullets[ds] = state.bullets[ds] || [];
+    state.bullets[ds].push({ t: jType, done: false, text: t });
+    bjSave(); renderJournal();
+  }
+  function moveTomorrow(idx){
+    var arr = state.bullets[jDate]; if(!arr || !arr[idx]) return;
+    var b = arr.splice(idx,1)[0];
+    var nd = addDaysStr(jDate, 1);
+    state.bullets[nd] = state.bullets[nd] || [];
+    state.bullets[nd].push(b);
+    bjSave(); renderJournal();
+  }
+  function monthShift(d){
+    var p = jDate.split('-');
+    var m0 = +p[1]-1 + d, y0 = +p[0];
+    if(m0 < 0){ m0 = 11; y0--; } else if(m0 > 11){ m0 = 0; y0++; }
+    var day = Math.min(+p[2], jMonthDays(y0, m0));
+    jDate = y0 + '-' + pad(m0+1) + '-' + pad(day);
+    renderJournal();
+  }
+  viewJournal.addEventListener('click', function(ev){
+    var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
+    if(!b) return;
+    var act = b.getAttribute('data-act');
+    if(act === 'dayPrev'){ jDate = addDaysStr(jDate, -1); renderJournal(); }
+    else if(act === 'dayNext'){ jDate = addDaysStr(jDate, 1); renderJournal(); }
+    else if(act === 'bjType'){ jType = b.getAttribute('data-t'); renderJournal(); }
+    else if(act === 'bjAdd'){ addBulletLine(jDate); }
+    else if(act === 'dayGo'){ jDate = b.getAttribute('data-date'); renderJournal(); }
+    else if(act === 'monNav'){ monthShift(+b.getAttribute('data-d')); }
+    else if(act === 'taskTog'){
+      var arr = state.bullets[jDate]; var i = +b.getAttribute('data-i');
+      if(arr && arr[i]){ arr[i].done = !arr[i].done; bjSave(); renderJournal(); }
+    }
+    else if(act === 'delB'){
+      var arr2 = state.bullets[jDate]; var i2 = +b.getAttribute('data-i');
+      if(arr2 && arr2[i2]){ arr2.splice(i2,1); bjSave(); renderJournal(); }
+    }
+    else if(act === 'moveT'){ moveTomorrow(+b.getAttribute('data-i')); }
+  });
+  viewJournal.addEventListener('keydown', function(ev){
+    if(ev.key === 'Enter' && ev.target && ev.target.id === 'bjInput'){ ev.preventDefault(); addBulletLine(jDate); }
   });
 
   // PWA：可安装到桌面 / 主屏幕

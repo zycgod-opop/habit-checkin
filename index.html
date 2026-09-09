@@ -1715,9 +1715,26 @@
     return t;
   }
 
+  function dietEntryKey(e){
+    if(e.kind === 'f') return 'f|' + e.name + '|' + e.count + '|' + e.unitLabel + '|' + JSON.stringify(e.perU||{});
+    return 'w|' + e.name + '|' + e.grams + '|' + JSON.stringify(e.per||{});
+  }
+  function dedupeDietList(arr){
+    var seen = {}, out = [];
+    arr.forEach(function(e){
+      var k = dietEntryKey(e);
+      if(seen[k]) return;
+      seen[k] = 1;
+      out.push(e);
+    });
+    return out;
+  }
   function renderDiet(){
     var ds = dietSelDate;
-    var list = dietEntries();
+    var raw = dietArr(ds);
+    var cleaned = dedupeDietList(raw);
+    if(cleaned.length !== raw.length){ state.dietLog[ds] = cleaned; save(); }
+    var list = cleaned;
     var t = dietTotals(list);
     var g = goalsOf();
     var isTodayD = ds === today;
@@ -1794,14 +1811,14 @@
                 '<span class="dname">' + esc(e.name) + '</span>' +
                 '<span class="kcal" style="display:flex;align-items:center;gap:6px;"><button type="button" class="mini-btn" data-act="decF" data-i="' + i + '" style="padding:2px 8px;" title="减一份">−1</button>×' + e.count + '<button type="button" class="mini-btn" data-act="incF" data-i="' + i + '" style="padding:2px 8px;" title="再加一份">＋1份</button></span>' +
                 '<span class="kcal">' + Math.round(nu2.kcal) + ' kcal</span>' +
-                '<button type="button" class="act del" data-act="delDiet" data-i="' + i + '" title="移除">×</button>' +
+                '<button type="button" class="act del" data-act="delDiet" data-id="' + e.id + '" title="移除">×</button>' +
               '</li>';
             }
             return '<li data-i="' + i + '">' +
               '<span class="dname">' + esc(e.name) + (e.label ? ' <i class="qty-tag">' + esc(e.label) + '</i>' : '') + '</span>' +
               '<input class="gram-in" data-i="' + i + '" type="number" min="0" step="10" value="' + e.grams + '">' +
               '<span class="kcal">' + Math.round(itemNut(e).kcal) + ' kcal</span>' +
-              '<button type="button" class="act del" data-act="delDiet" data-i="' + i + '" title="移除">×</button>' +
+              '<button type="button" class="act del" data-act="delDiet" data-id="' + e.id + '" title="移除">×</button>' +
             '</li>';
           }).join('') +
         '</ul>' +
@@ -2159,9 +2176,12 @@
     }
     else if(act === 'cancelQty'){ pendingFood = null; updateFoodResults(''); }
     else if(act === 'delDiet'){
-      var i = +b.getAttribute('data-i');
+      var did = b.getAttribute('data-id');
       var arr = dietEntries();
-      if(arr[i]){ arr.splice(i,1); save(); renderDiet(); }
+      for(var di=0;di<arr.length;di++){
+        if(arr[di].id === did){ arr.splice(di,1); break; }
+      }
+      save(); renderDiet();
     }
     else if(act === 'incF' || act === 'decF'){
       var i2 = +b.getAttribute('data-i');

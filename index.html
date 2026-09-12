@@ -1816,7 +1816,8 @@
             }
             return '<li data-i="' + i + '">' +
               '<span class="dname">' + esc(e.name) + (e.label ? ' <i class="qty-tag">' + esc(e.label) + '</i>' : '') + '</span>' +
-              '<input class="gram-in" data-i="' + i + '" type="number" min="0" step="10" value="' + e.grams + '">' +
+              '<button type="button" class="mini-btn" data-act="addServing" data-id="' + e.id + '" style="padding:3px 8px;white-space:nowrap;">＋1' + (e.unitLabel || '份') + '</button>' +
+              '<input class="gram-in" data-i="' + i + '" type="number" min="0" step="1" value="' + e.grams + '">' +
               '<span class="kcal">' + Math.round(itemNut(e).kcal) + ' kcal</span>' +
               '<button type="button" class="act del" data-act="delDiet" data-id="' + e.id + '" title="移除">×</button>' +
             '</li>';
@@ -1891,12 +1892,12 @@
     return null;
   }
   function addDietEntry(food, grams){
-    ensureDietArr(dietSelDate).push({ id: uid(), name: food.name, grams: grams, per: { kcal: food.kcal||0, p: food.p||0, c: food.c||0, f: food.f||0, fib: food.fib||0 } });
+    ensureDietArr(dietSelDate).push({ id: uid(), name: food.name, grams: grams, per: { kcal: food.kcal||0, p: food.p||0, c: food.c||0, f: food.f||0, fib: food.fib||0 }, foodId: food.id, unitLabel: food.unitLabel || '', unitG: food.unitG || 0 });
     save(); renderDiet();
   }
   function addDietFixed(food, count){
     ensureDietArr(dietSelDate).push({
-      id: uid(), name: food.name, kind: 'f', count: count, unitLabel: food.unitLabel || '份',
+      id: uid(), name: food.name, kind: 'f', count: count, unitLabel: food.unitLabel || '份', foodId: food.id,
       perU: { kcal: food.perU ? food.perU.kcal||0 : 0, p: food.perU ? food.perU.p||0 : 0, c: food.perU ? food.perU.c||0 : 0, f: food.perU ? food.perU.f||0 : 0, fib: food.perU ? food.perU.fib||0 : 0 }
     });
     save(); renderDiet();
@@ -1941,7 +1942,8 @@
     var grams = Math.max(1, Math.round(qtyGrams(food, unit, qty, fGram) * 10) / 10);
     ensureDietArr(dietSelDate).push({
       id: uid(), name: food.name, grams: grams, label: qtyText(food, unit, qty),
-      per: { kcal: food.kcal||0, p: food.p||0, c: food.c||0, f: food.f||0, fib: food.fib||0 }
+      per: { kcal: food.kcal||0, p: food.p||0, c: food.c||0, f: food.f||0, fib: food.fib||0 },
+      foodId: food.id, unitLabel: food.unitLabel || '', unitG: food.unitG || 0
     });
     save(); renderDiet();
   }
@@ -1956,7 +1958,7 @@
     box.innerHTML = '<div class="qty-panel">' +
       '<div class="qty-title">' + esc(food.name) + (food.brand ? '（' + esc(food.brand) + '）' : '') + '</div>' +
       '<div class="qty-row">' +
-        '<input id="qtyNum" type="number" min="0.1" step="0.5" value="1">' +
+        '<input id="qtyNum" type="number" min="1" step="1" inputmode="numeric" value="1">' +
         '<select id="qtyUnit">' + opts + '</select>' +
         '<button type="button" class="btn primary" data-act="addFoodQty">添加</button>' +
         '<button type="button" class="btn ghost" data-act="cancelQty">取消</button>' +
@@ -2180,6 +2182,20 @@
       var arr = dietEntries();
       for(var di=0;di<arr.length;di++){
         if(arr[di].id === did){ arr.splice(di,1); break; }
+      }
+      save(); renderDiet();
+    }
+    else if(act === 'addServing'){
+      var sid = b.getAttribute('data-id');
+      var arrS = dietEntries();
+      for(var si2=0; si2<arrS.length; si2++){
+        var en2 = arrS[si2];
+        if(en2.id === sid && en2.kind !== 'f'){
+          var addG = en2.unitG ? en2.unitG : ((state.foodServing && state.foodServing[en2.foodId]) || 100);
+          en2.grams = Math.round((en2.grams + addG) * 10) / 10;
+          en2.label = en2.grams + '克';
+          break;
+        }
       }
       save(); renderDiet();
     }

@@ -2555,7 +2555,13 @@
       var out = lA ? l.slice() : [];
       var seen = {};
       out.forEach(function(x){ if(x && x.id) seen[x.id] = true; });
-      (rA ? r : []).forEach(function(x){ if(x && x.id && !seen[x.id]){ out.push(x); seen[x.id]=true; } else if(!x || !x.id){ out.push(x); } });
+      var noId = {};
+      out.forEach(function(x){ if(x && !x.id) noId[JSON.stringify(x)] = true; });
+      (rA ? r : []).forEach(function(x){
+        if(x && x.id){ if(!seen[x.id]){ out.push(x); seen[x.id] = true; } }
+        else if(x){ var kk = JSON.stringify(x); if(!noId[kk]){ out.push(x); noId[kk] = true; } }
+        else { out.push(x); }
+      });
       return out;
     }
     if(typeof l === 'object' && typeof r === 'object'){
@@ -2780,7 +2786,26 @@
   function jMonthLabel(ds){ var p=ds.split('-'); return (+p[0])+'年'+(+p[1])+'月'; }
   function jWday(ds){ var p=ds.split('-'); return WEEK[new Date(+p[0],+p[1]-1,+p[2]).getDay()]; }
 
+  function normalizeBullets(){
+    var changed = false;
+    Object.keys(state.bullets).forEach(function(ds){
+      var arr = state.bullets[ds] || [];
+      var seen = {}, out = [];
+      arr.forEach(function(b){
+        if(!b) return;
+        var key = b.id ? ('id|' + b.id) : ('legacy|' + b.t + '|' + !!b.done + '|' + (b.text || ''));
+        if(seen[key]){ changed = true; return; }
+        seen[key] = 1;
+        if(!b.id){ b.id = 'b' + Date.now() + Math.random().toString(36).slice(2,7); changed = true; }
+        out.push(b);
+      });
+      if(out.length !== arr.length) changed = true;
+      state.bullets[ds] = out;
+    });
+    if(changed) save();
+  }
   function renderJournal(){
+    normalizeBullets();
     var ds = jDate;
     var arr = jBulk(ds);
     var todayFlag = ds === today;
@@ -2865,7 +2890,7 @@
     var inp = $('bjInput'); if(!inp) return;
     var t = inp.value.trim(); if(!t) return;
     state.bullets[ds] = state.bullets[ds] || [];
-    state.bullets[ds].push({ t: jType, done: false, text: t });
+    state.bullets[ds].push({ id: 'b' + Date.now() + Math.random().toString(36).slice(2,7), t: jType, done: false, text: t });
     bjSave(); renderJournal();
   }
   function moveTomorrow(idx){

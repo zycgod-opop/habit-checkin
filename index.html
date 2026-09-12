@@ -561,6 +561,11 @@
   .bj-day-cell:disabled{opacity:.4;}
   .bj-key{font-size:11.5px;color:var(--ink-3);line-height:1.8;margin-top:8px;}
 
+
+  .qty-edit,.unit-edit,.cnt-edit{border:1px solid var(--line-strong);border-radius:8px;padding:5px 6px;font-size:13px;background:#fff;color:var(--ink);outline:none;font-family:inherit;text-align:center;}
+  .qty-edit,.cnt-edit{width:58px;text-align:right;}
+  .unit-edit{padding:5px 4px;}
+
 </style>
 </head>
 <body>
@@ -1705,6 +1710,30 @@
     var r = e.grams / 100;
     return { kcal:(e.per.kcal||0)*r, p:(e.per.p||0)*r, c:(e.per.c||0)*r, f:(e.per.f||0)*r, fib:(e.per.fib||0)*r };
   }
+  function serveGramsOf(e){
+    if(e.unitG) return e.unitG;
+    if(e.foodId && state.foodServing && state.foodServing[e.foodId]) return state.foodServing[e.foodId];
+    return 100;
+  }
+  function editUnitOf(e){
+    if(e.editUnit) return e.editUnit;
+    if(e.unitLabel && e.unitG && e.label && String(e.label).indexOf(e.unitLabel) >= 0) return 'u';
+    if(e.label && String(e.label).indexOf('份') >= 0) return 'f';
+    return 'g';
+  }
+  function entryQty(e){
+    var u = editUnitOf(e);
+    if(u === 'f') return Math.round((e.grams / serveGramsOf(e)) * 100) / 100;
+    if(u === 'u') return Math.round((e.grams / (e.unitG || 1)) * 100) / 100;
+    return Math.round(e.grams * 10) / 10;
+  }
+  function applyEntryQty(e, q){
+    var u = editUnitOf(e);
+    q = Math.max(0, +q || 0);
+    if(u === 'f'){ e.grams = Math.round(q * serveGramsOf(e) * 10) / 10; e.label = q + '份'; }
+    else if(u === 'u'){ e.grams = Math.round(q * (e.unitG || 1) * 10) / 10; e.label = q + (e.unitLabel || '个'); }
+    else { e.grams = Math.round(q * 10) / 10; e.label = q + '克'; }
+  }
   function dietTotals(list){
     var t = { kcal:0, p:0, c:0, f:0, fib:0 };
     list.forEach(function(e){
@@ -1808,16 +1837,21 @@
             if(e.kind === 'f'){
               var nu2 = itemNut(e);
               return '<li data-i="' + i + '">' +
-                '<span class="dname">' + esc(e.name) + '</span>' +
-                '<span class="kcal" style="display:flex;align-items:center;gap:6px;"><button type="button" class="mini-btn" data-act="decF" data-i="' + i + '" style="padding:2px 8px;" title="减一份">−1</button>×' + e.count + '<button type="button" class="mini-btn" data-act="incF" data-i="' + i + '" style="padding:2px 8px;" title="再加一份">＋1份</button></span>' +
+                '<span class="dname">' + esc(e.name) + (e.label ? ' <i class="qty-tag">' + esc(e.label) + '</i>' : '') + '</span>' +
+                '<input class="cnt-edit" data-id="' + e.id + '" type="number" min="1" step="1" value="' + e.count + '">' +
+                '<span class="qty-tag">' + esc(e.unitLabel || '份') + '</span>' +
                 '<span class="kcal">' + Math.round(nu2.kcal) + ' kcal</span>' +
                 '<button type="button" class="act del" data-act="delDiet" data-id="' + e.id + '" title="移除">×</button>' +
               '</li>';
             }
+            var eUnit = editUnitOf(e);
+            var unitOpts = '<option value="g"' + (eUnit==='g'?' selected':'') + '>克</option>' +
+                           '<option value="f"' + (eUnit==='f'?' selected':'') + '>份</option>' +
+                           (e.unitLabel && e.unitG ? '<option value="u"' + (eUnit==='u'?' selected':'') + '>' + esc(e.unitLabel) + '</option>' : '');
             return '<li data-i="' + i + '">' +
               '<span class="dname">' + esc(e.name) + (e.label ? ' <i class="qty-tag">' + esc(e.label) + '</i>' : '') + '</span>' +
-              '<button type="button" class="mini-btn" data-act="addServing" data-id="' + e.id + '" style="padding:3px 8px;white-space:nowrap;">＋1' + (e.unitLabel || '份') + '</button>' +
-              '<input class="gram-in" data-i="' + i + '" type="number" min="0" step="1" value="' + e.grams + '">' +
+              '<input class="qty-edit" data-id="' + e.id + '" type="number" min="0" step="1" value="' + entryQty(e) + '">' +
+              '<select class="unit-edit" data-id="' + e.id + '">' + unitOpts + '</select>' +
               '<span class="kcal">' + Math.round(itemNut(e).kcal) + ' kcal</span>' +
               '<button type="button" class="act del" data-act="delDiet" data-id="' + e.id + '" title="移除">×</button>' +
             '</li>';
@@ -2239,10 +2273,15 @@
     }
   });
   fitDietView.addEventListener('change', function(ev){
-    if(ev.target.classList.contains('gram-in')){
-      var i = +ev.target.getAttribute('data-i');
-      var arr = dietEntries();
-      if(arr[i] && arr[i].kind !== 'f'){ arr[i].grams = Math.max(0, +ev.target.value || 0); arr[i].label = arr[i].grams + '克'; save(); renderDiet(); }
+    if(ev.target.classList.contains('qty-edit') || ev.target.classList.contains('cnt-edit') || ev.target.classList.contains('unit-edit')){
+      var eid = ev.target.getAttribute('data-id');
+      var det = (state.dietLog[dietSelDate] || []).filter(function(x){ return x.id === eid; })[0];
+      if(det){
+        if(ev.target.classList.contains('unit-edit')){ det.editUnit = ev.target.value; }
+        else if(ev.target.classList.contains('cnt-edit')){ det.count = Math.max(1, Math.round(+ev.target.value || 1)); det.label = det.count + (det.unitLabel || '份'); }
+        else { applyEntryQty(det, ev.target.value); }
+        save(); renderDiet();
+      }
     }
   });
 

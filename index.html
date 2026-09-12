@@ -2814,12 +2814,14 @@
     if(!arr.length){ rows.push('<div class="bj-empty">这一天还没有记录。选个类型（•任务 / ○事件 / –笔记），写下第一行吧</div>'); }
     else {
       arr.forEach(function(b, i){
-        var sym = '<span class="bj-sym ' + b.t + '">' + BJ_T[b.t] + '</span>';
+        var symTxt = b.sched ? '<' : (b.mig ? '>' : BJ_T[b.t]);
+        var sym = '<span class="bj-sym ' + b.t + '" title="' + (b.sched ? '已排程到未来' : (b.mig ? '从过去迁移而来' : '')) + '">' + symTxt + '</span>';
         var cb = b.t === 'task'
           ? '<button type="button" class="bj-taskbtn' + (b.done ? ' done' : '') + '" data-act="taskTog" data-i="' + i + '">✓</button>'
           : '';
         var move = (b.t === 'task' && !b.done)
-          ? '<button type="button" class="bj-mini" data-act="moveT" data-i="' + i + '" title="迁移到明天">→明日</button>'
+          ? '<button type="button" class="bj-mini" data-act="moveT" data-i="' + i + '" title="迁移到明天">→明日</button>' +
+            '<button type="button" class="bj-mini" data-act="futureT" data-i="' + i + '" title="排程到指定日期（写入未来日志）">→未来</button>'
           : '';
         rows.push('<li>' + sym + cb +
           '<span class="bj-text' + (b.done ? ' done' : '') + '">' + esc(b.text) + '</span>' +
@@ -2853,14 +2855,22 @@
       }
     });
     fut.sort(function(a,b2){ return a.k < b2.k ? -1 : 1; });
-    var futHtml = fut.length
-      ? '<ul class="bj-list">' + fut.slice(0,30).map(function(o){
-          return '<li><span class="bj-sym ' + o.b.t + '">' + BJ_T[o.b.t] + '</span><span class="bj-text">' + (+o.k.slice(5,7)) + '/' + (+o.k.slice(8,10)) + ' · ' + esc(o.b.text) + '</span><button type="button" class="bj-mini" data-act="dayGo" data-date="'+o.k+'">去看</button></li>';
+    var futTomorrow = addDaysStr(today, 1);
+    var futAddHtml = '<div class="bj-add" style="margin:6px 4px 8px;">' +
+        '<input id="futInput" type="text" maxlength="200" placeholder="写到未来日志：如 10/1 交房租…">' +
+        '<input id="futDate" type="date" min="' + futTomorrow + '" value="' + futTomorrow + '" style="max-width:150px;">' +
+        '<button type="button" class="btn primary" data-act="futAdd" style="padding:9px 14px;">添加</button>' +
+      '</div>';
+    var futHtml = (fut.length
+      ? '<ul class="bj-list">' + fut.slice(0,50).map(function(o){
+          var st = o.b.sched ? '<' : (o.b.mig ? '>' : BJ_T[o.b.t]);
+          return '<li><span class="bj-sym ' + o.b.t + '">' + st + '</span><span class="bj-text">' + (+o.k.slice(5,7)) + '/' + (+o.k.slice(8,10)) + ' · ' + esc(o.b.text) + '</span><button type="button" class="bj-mini" data-act="dayGo" data-date="'+o.k+'">去看</button><button type="button" class="bj-mini bj-del" data-act="delFut" data-date="'+o.k+'" data-txt="'+esc(o.b.text)+'">×</button></li>';
         }).join('') + '</ul>'
-      : '<div class="bj-empty">没有待办的未来记录</div>';
+      : '<div class="bj-empty">还没有未来记录。下面直接添加一条，或把今天的任务点「→未来」排程过去</div>');
 
     viewJournal.innerHTML = '<div id="journalBody"></div>';
     $('journalBody').innerHTML =
+      '<div class="card fit-card"><b style="font-size:14px;display:block;padding:4px 6px 2px;">未来日志</b>' + futAddHtml + futHtml + '</div>' +
       '<div class="card fit-card">' +
         '<div class="wk-nav">' +
           '<button type="button" class="wk-arrow" data-act="dayPrev">‹</button>' +
@@ -2881,8 +2891,7 @@
         '<b style="font-size:14px;">' + jMonthLabel(ds) + '</b>' +
         '<button type="button" class="bj-day-cell" data-act="monNav" data-d="1">下月 ›</button></div>' +
         '<div class="bj-mon">' + monCells.join('') + '</div>' +
-      '</div>' +
-      '<div class="card fit-card"><b style="font-size:14px;display:block;padding:4px 6px 2px;">未来日志</b>' + futHtml + '</div>';
+      '</div>';
   }
 
   function bjSave(){ save(); }
@@ -2896,6 +2905,7 @@
   function moveTomorrow(idx){
     var arr = state.bullets[jDate]; if(!arr || !arr[idx]) return;
     var b = arr.splice(idx,1)[0];
+    b.mig = true; b.sched = false;
     var nd = addDaysStr(jDate, 1);
     state.bullets[nd] = state.bullets[nd] || [];
     state.bullets[nd].push(b);
@@ -2928,6 +2938,29 @@
       if(arr2 && arr2[i2]){ arr2.splice(i2,1); bjSave(); renderJournal(); }
     }
     else if(act === 'moveT'){ moveTomorrow(+b.getAttribute('data-i')); }
+    else if(act === 'futureT'){
+      var fi = +b.getAttribute('data-i');
+      var fd = window.prompt('排程到哪一天？格式 2026-09-20', addDaysStr(today, 1));
+      if(fd && /^\d{4}-\d{2}-\d{2}$/.test(fd) && fd > today){
+        var fa = state.bullets[jDate];
+        if(fa && fa[fi]){ var fb = fa.splice(fi,1)[0]; fb.sched = true; fb.mig = false;
+          state.bullets[fd] = state.bullets[fd] || []; state.bullets[fd].push(fb); save(); renderJournal(); }
+      }
+    }
+    else if(act === 'futAdd'){
+      var ft = $('futInput'), fdd = $('futDate');
+      if(ft && fdd && ft.value.trim() && fdd.value > today){
+        state.bullets[fdd.value] = state.bullets[fdd.value] || [];
+        state.bullets[fdd.value].push({ id: 'b' + Date.now() + Math.random().toString(36).slice(2,7), t: 'task', done: false, text: ft.value.trim(), sched: true });
+        save(); renderJournal();
+      }
+    }
+    else if(act === 'delFut'){
+      var dd = b.getAttribute('data-date'), tx = b.getAttribute('data-txt');
+      var arrF = state.bullets[dd] || [];
+      for(var zi=0; zi<arrF.length; zi++){ if(arrF[zi].text === tx && !arrF[zi].done){ arrF.splice(zi,1); break; } }
+      save(); renderJournal();
+    }
   });
   viewJournal.addEventListener('keydown', function(ev){
     if(ev.key === 'Enter' && ev.target && ev.target.id === 'bjInput'){ ev.preventDefault(); addBulletLine(jDate); }

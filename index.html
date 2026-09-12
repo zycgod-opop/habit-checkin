@@ -1933,6 +1933,13 @@
     return qty + '克';
   }
   var pendingFood = null;
+  function rememberServing(food, grams){
+    if(!food || !food.id) return;
+    var g = Math.max(1, Math.round(+grams || 0));
+    state.foodServing = state.foodServing || {};
+    state.foodServing[food.id] = g;
+    save();
+  }
   function addDietFood(food, unit, qty, fGram){
     if(unit === 'f'){
       var fg2 = Math.max(1, +fGram || 100);
@@ -1955,6 +1962,10 @@
     }).join('');
     var hint = food.unitLabel && food.unitG ? food.unitLabel + '：每' + food.unitLabel + '约 ' + food.unitG + 'g' : '';
     var fg = state.foodServing && state.foodServing[food.id] ? state.foodServing[food.id] : 100;
+    var presets = [50, 100, 150, 200, 250];
+    var isPreset = presets.indexOf(+fg) >= 0;
+    var presetOpts = presets.map(function(x){ return '<option value="' + x + '"' + (isPreset && +fg === x ? ' selected' : '') + '>' + x + ' g</option>'; }).join('') +
+      '<option value="custom"' + (isPreset ? '' : ' selected') + '>自定义…</option>';
     box.innerHTML = '<div class="qty-panel">' +
       '<div class="qty-title">' + esc(food.name) + (food.brand ? '（' + esc(food.brand) + '）' : '') + '</div>' +
       '<div class="qty-row">' +
@@ -1964,7 +1975,10 @@
         '<button type="button" class="btn ghost" data-act="cancelQty">取消</button>' +
       '</div>' +
       '<div class="qty-f" id="qtyFwrap" hidden>' +
-        '<label style="font-size:12.5px;color:var(--ink-2);">1 份 = <input id="qtyF" type="number" min="1" step="1" value="' + fg + '"> 克（可自定，会记住）</label>' +
+        '<label style="font-size:12.5px;color:var(--ink-2);">1 份 = </label>' +
+        '<select id="qtyFPreset" style="border:1px solid var(--line-strong);border-radius:8px;padding:5px 7px;font-size:13px;background:#fff;color:var(--ink);font-family:inherit;">' + presetOpts + '</select>' +
+        '<input id="qtyF" type="number" min="1" step="1" value="' + fg + '"> <span style="font-size:12.5px;color:var(--ink-2);">克</span>' +
+        '<div style="font-size:11px;color:var(--ink-3);margin-top:3px;">已记住这个食物的份量，下次自动带出；改动后自动更新</div>' +
       '</div>' +
       '<p class="fit-note" style="margin:5px 0 0;">克=按克数；份=按你设的克数算' + (hint ? '；' + hint : '') + '</p>' +
     '</div>';
@@ -2235,6 +2249,18 @@
   fitDietView.addEventListener('change', function(ev){
     if(ev.target.id === 'qtyUnit'){
       var w = $('qtyFwrap'); if(w) w.hidden = ev.target.value !== 'f';
+      return;
+    }
+    if(ev.target.id === 'qtyFPreset'){
+      var pf = ev.target.value;
+      if(pf === 'custom'){ var qi = $('qtyF'); if(qi){ qi.value = ''; qi.focus(); } }
+      else { var qv = $('qtyF'); if(qv){ qv.value = pf; rememberServing(pendingFood, +pf); } }
+      return;
+    }
+    if(ev.target.id === 'qtyF'){
+      rememberServing(pendingFood, ev.target.value);
+      var ps = $('qtyFPreset');
+      if(ps){ var val = Math.round(+ev.target.value || 0); ps.value = ([50,100,150,200,250].indexOf(val) >= 0) ? String(val) : 'custom'; }
       return;
     }
     var id = ev.target.id;

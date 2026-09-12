@@ -2578,6 +2578,7 @@
     Object.keys(a).forEach(function(k){ keys[k]=1; });
     Object.keys(b).forEach(function(k){ keys[k]=1; });
     Object.keys(keys).forEach(function(k){ o[k] = (k in a && k in b) ? mergeVal(a[k], b[k]) : ((k in a) ? a[k] : b[k]); });
+    if(o.bullets && typeof dedupeBulletsData === 'function') dedupeBulletsData(o.bullets);
     return o;
   }
   function refreshAllUI(){
@@ -2786,23 +2787,38 @@
   function jMonthLabel(ds){ var p=ds.split('-'); return (+p[0])+'年'+(+p[1])+'月'; }
   function jWday(ds){ var p=ds.split('-'); return WEEK[new Date(+p[0],+p[1]-1,+p[2]).getDay()]; }
 
-  function normalizeBullets(){
+  function bulletKey(b){
+    return (b.t || 'note') + '|' + (b.done ? 1 : 0) + '|' + (b.sched ? 1 : 0) + '|' + (b.mig ? 1 : 0) + '|' + (b.text || '');
+  }
+  function canonDateKey(k){
+    var m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(k || '');
+    if(!m) return k;
+    return m[1] + '-' + pad(+m[2]) + '-' + pad(+m[3]);
+  }
+  function dedupeBulletsData(obj){
     var changed = false;
-    Object.keys(state.bullets).forEach(function(ds){
-      var arr = state.bullets[ds] || [];
+    var outObj = {};
+    Object.keys(obj || {}).forEach(function(k){
+      var dsk = canonDateKey(k);
+      if(dsk !== k) changed = true;
+      var arr = obj[k] || [];
       var seen = {}, out = [];
       arr.forEach(function(b){
         if(!b) return;
-        var key = b.id ? ('id|' + b.id) : ('legacy|' + b.t + '|' + !!b.done + '|' + (b.text || ''));
+        var key = bulletKey(b);
         if(seen[key]){ changed = true; return; }
         seen[key] = 1;
-        if(!b.id){ b.id = 'b' + Date.now() + Math.random().toString(36).slice(2,7); changed = true; }
+        if(!b.id){ b.id = 'legacy:' + key; changed = true; }
         out.push(b);
       });
       if(out.length !== arr.length) changed = true;
-      state.bullets[ds] = out;
+      outObj[dsk] = (outObj[dsk] || []).concat(out);
     });
-    if(changed) save();
+    if(changed){ Object.keys(obj).forEach(function(k){ delete obj[k]; }); Object.keys(outObj).forEach(function(k){ obj[k] = outObj[k]; }); }
+    return changed;
+  }
+  function normalizeBullets(){
+    if(dedupeBulletsData(state.bullets)) save();
   }
   function renderJournal(){
     normalizeBullets();

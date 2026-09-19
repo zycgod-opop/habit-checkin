@@ -566,6 +566,24 @@
   .qty-edit,.cnt-edit{width:58px;text-align:right;}
   .unit-edit{padding:5px 4px;}
 
+
+  /* courses */
+  .course-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .course-grid input,.course-grid select,.course-grid .full{border:1px solid var(--line-strong);border-radius:9px;padding:9px 10px;font-size:13.5px;background:#fff;color:var(--ink);outline:none;font-family:inherit;}
+  .course-grid input:focus,.course-grid select:focus{border-color:var(--red);}
+  .course-grid .full{grid-column:1 / -1;}
+  .course-day{margin-bottom:10px;}
+  .course-day-title{font-size:13px;font-weight:700;color:var(--ink-2);margin:2px 2px 5px;}
+  .course-day-title.today{color:var(--red);}
+  .course-item{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;margin-bottom:5px;background:var(--surface-2);}
+  .course-time{flex:none;font-size:12px;font-weight:700;color:var(--blue);min-width:86px;}
+  .course-main{flex:1;min-width:0;}
+  .course-main b{display:block;font-size:14px;color:var(--ink);}
+  .course-main span{font-size:11.5px;color:var(--ink-3);}
+  .course-del{flex:none;border:none;background:transparent;color:#c3cad8;font-size:16px;cursor:pointer;padding:0 4px;}
+  .course-del:hover{color:var(--red);}
+  .course-empty{color:var(--ink-3);font-size:13px;padding:12px 4px;text-align:center;}
+
 </style>
 </head>
 <body>
@@ -583,6 +601,7 @@
         <button type="button" id="tabStatsBtn" class="tab" role="tab" aria-selected="false">统计</button>
         <button type="button" id="tabFitBtn" class="tab" role="tab" aria-selected="false">健身</button>
         <button type="button" id="tabJournalBtn" class="tab" role="tab" aria-selected="false">心得</button>
+        <button type="button" id="tabCourseBtn" class="tab" role="tab" aria-selected="false">课程</button>
       </nav>
     </header>
 
@@ -664,6 +683,11 @@
     <!-- 心得·子弹笔记 -->
     <section id="viewJournal" hidden>
       <div id="journalBody"></div>
+    </section>
+
+    <!-- 课程 -->
+    <section id="viewCourses" hidden>
+      <div id="courseBody"></div>
     </section>
 
     <footer>
@@ -796,7 +820,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {} }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [] }; }
 
   function load(){
     try{
@@ -815,6 +839,7 @@
       raw.weights = (raw.weights && typeof raw.weights === 'object') ? raw.weights : {};
       raw.foodServing = (raw.foodServing && typeof raw.foodServing === 'object') ? raw.foodServing : {};
       raw.bullets = (raw.bullets && typeof raw.bullets === 'object') ? raw.bullets : {};
+      raw.courses = Array.isArray(raw.courses) ? raw.courses : [];
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1133,9 +1158,9 @@
 
   // ---- 视图切换 ----
   function showView(name){
-    var views = { today: viewToday, stats: viewStats, fit: viewFit, journal: viewJournal };
+    var views = { today: viewToday, stats: viewStats, fit: viewFit, journal: viewJournal, course: viewCourses };
     for(var k in views){ if(views[k]) views[k].hidden = (k !== name); }
-    var tabs = { today: tabTodayBtn, stats: tabStatsBtn, fit: tabFitBtn, journal: tabJournalBtn };
+    var tabs = { today: tabTodayBtn, stats: tabStatsBtn, fit: tabFitBtn, journal: tabJournalBtn, course: tabCourseBtn };
     for(var k2 in tabs){
       if(!tabs[k2]) continue;
       var on = (k2 === name);
@@ -1145,6 +1170,7 @@
     if(name === 'stats'){ renderStats(); }
     else if(name === 'fit'){ fitRefreshAll(); }
     else if(name === 'journal'){ renderJournal(); }
+    else if(name === 'course'){ renderCourses(); }
     else { renderDate(); }
   }
 
@@ -1563,6 +1589,7 @@
   tabStatsBtn.addEventListener('click', function(){ showView('stats'); });
   tabFitBtn.addEventListener('click', function(){ showView('fit'); });
   $('tabJournalBtn').addEventListener('click', function(){ showView('journal'); });
+  $('tabCourseBtn').addEventListener('click', function(){ showView('course'); });
   $('prevMonthBtn').addEventListener('click', function(){ changeMonth(-1); });
   $('nextMonthBtn').addEventListener('click', function(){ changeMonth(1); });
   backTodayBtn.addEventListener('click', function(){
@@ -1616,7 +1643,8 @@
           goals: (data.goals && typeof data.goals === 'object') ? { kcal: +data.goals.kcal || 0, protein: +data.goals.protein || 0 } : { kcal: 0, protein: 0 },
           weights: (data.weights && typeof data.weights === 'object') ? data.weights : {},
           foodServing: (data.foodServing && typeof data.foodServing === 'object') ? data.foodServing : {},
-          bullets: (data.bullets && typeof data.bullets === 'object') ? data.bullets : {}
+          bullets: (data.bullets && typeof data.bullets === 'object') ? data.bullets : {},
+          courses: Array.isArray(data.courses) ? data.courses : []
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -1710,28 +1738,45 @@
     var r = e.grams / 100;
     return { kcal:(e.per.kcal||0)*r, p:(e.per.p||0)*r, c:(e.per.c||0)*r, f:(e.per.f||0)*r, fib:(e.per.fib||0)*r };
   }
+  function libFoodByName(name){
+    var all = FOOD_LIBRARY.concat(state.foods || []);
+    for(var i=0;i<all.length;i++){ if(all[i].name === name) return all[i]; }
+    return null;
+  }
+  function entryUnitInfo(e){
+    var label = e.unitLabel, g = e.unitG;
+    if((!label || !g)){
+      var f = libFoodByName(e.name);
+      if(f){ if(!label) label = f.unitLabel; if(!g) g = f.unitG; }
+    }
+    return { label: label || '', g: +g || 0 };
+  }
   function serveGramsOf(e){
-    if(e.unitG) return e.unitG;
+    var ui = entryUnitInfo(e);
+    if(ui.g) return ui.g;
     if(e.foodId && state.foodServing && state.foodServing[e.foodId]) return state.foodServing[e.foodId];
+    var f = libFoodByName(e.name);
+    if(f && state.foodServing && state.foodServing[f.id]) return state.foodServing[f.id];
     return 100;
   }
   function editUnitOf(e){
     if(e.editUnit) return e.editUnit;
-    if(e.unitLabel && e.unitG && e.label && String(e.label).indexOf(e.unitLabel) >= 0) return 'u';
+    var ui = entryUnitInfo(e);
+    if(ui.label && ui.g && e.label && String(e.label).indexOf(ui.label) >= 0) return 'u';
     if(e.label && String(e.label).indexOf('份') >= 0) return 'f';
     return 'g';
   }
   function entryQty(e){
     var u = editUnitOf(e);
     if(u === 'f') return Math.round((e.grams / serveGramsOf(e)) * 100) / 100;
-    if(u === 'u') return Math.round((e.grams / (e.unitG || 1)) * 100) / 100;
+    if(u === 'u') return Math.round((e.grams / ((entryUnitInfo(e).g) || 1)) * 100) / 100;
     return Math.round(e.grams * 10) / 10;
   }
   function applyEntryQty(e, q){
     var u = editUnitOf(e);
     q = Math.max(0, +q || 0);
     if(u === 'f'){ e.grams = Math.round(q * serveGramsOf(e) * 10) / 10; e.label = q + '份'; }
-    else if(u === 'u'){ e.grams = Math.round(q * (e.unitG || 1) * 10) / 10; e.label = q + (e.unitLabel || '个'); }
+    else if(u === 'u'){ var ui = entryUnitInfo(e); e.grams = Math.round(q * (ui.g || 1) * 10) / 10; e.label = q + (ui.label || '个'); }
     else { e.grams = Math.round(q * 10) / 10; e.label = q + '克'; }
   }
   function dietTotals(list){
@@ -1845,9 +1890,10 @@
               '</li>';
             }
             var eUnit = editUnitOf(e);
+            var eUI = entryUnitInfo(e);
             var unitOpts = '<option value="g"' + (eUnit==='g'?' selected':'') + '>克</option>' +
                            '<option value="f"' + (eUnit==='f'?' selected':'') + '>份</option>' +
-                           (e.unitLabel && e.unitG ? '<option value="u"' + (eUnit==='u'?' selected':'') + '>' + esc(e.unitLabel) + '</option>' : '');
+                           (eUI.label && eUI.g ? '<option value="u"' + (eUnit==='u'?' selected':'') + '>' + esc(eUI.label) + '</option>' : '');
             return '<li data-i="' + i + '">' +
               '<span class="dname">' + esc(e.name) + (e.label ? ' <i class="qty-tag">' + esc(e.label) + '</i>' : '') + '</span>' +
               '<input class="qty-edit" data-id="' + e.id + '" type="number" min="0" step="1" value="' + entryQty(e) + '">' +
@@ -3019,6 +3065,81 @@
   });
   viewJournal.addEventListener('keydown', function(ev){
     if(ev.key === 'Enter' && ev.target && ev.target.id === 'bjInput'){ ev.preventDefault(); addBulletLine(jDate); }
+  });
+
+  // ================= 课程 =================
+  var viewCourses = $('viewCourses'), tabCourseBtn = $('tabCourseBtn');
+  var CDAYS = ['周一','周二','周三','周四','周五','周六','周日'];
+  function coursesSorted(){
+    return (state.courses || []).slice().sort(function(a,b){
+      if(a.day !== b.day) return a.day - b.day;
+      return String(a.start || '').localeCompare(String(b.start || ''));
+    });
+  }
+  function todayCourseDay(){
+    var d = new Date().getDay();
+    return d === 0 ? 7 : d;
+  }
+  function courseRowHtml(c){
+    return '<div class="course-item">' +
+      '<span class="course-time">' + esc(c.start || '--:--') + (c.end ? '–' + esc(c.end) : '') + '</span>' +
+      '<span class="course-main"><b>' + esc(c.name) + '</b><span>' + [c.teacher, c.loc, c.weeks].filter(function(x){ return x; }).map(esc).join(' · ') + '</span></span>' +
+      '<button type="button" class="course-del" data-act="delCourse" data-id="' + c.id + '" title="删除">×</button>' +
+    '</div>';
+  }
+  function renderCourses(){
+    var list = coursesSorted();
+    var td = todayCourseDay();
+    var todayList = list.filter(function(c){ return c.day === td; });
+    var dayBlocks = CDAYS.map(function(nm, i){
+      var day = i + 1;
+      var arr = list.filter(function(c){ return c.day === day; });
+      return '<div class="course-day"><div class="course-day-title' + (day === td ? ' today' : '') + '">' + nm + (day === td ? ' · 今天' : '') + '</div>' +
+        (arr.length ? arr.map(courseRowHtml).join('') : '<div class="course-empty">无课程</div>') + '</div>';
+    }).join('');
+
+    viewCourses.innerHTML = '<div id="courseBody"></div>';
+    $('courseBody').innerHTML =
+      '<div class="card fit-card">' +
+        '<h3>录入课程</h3>' +
+        '<div class="course-grid">' +
+          '<input id="cName" class="full" type="text" maxlength="40" placeholder="课程名称，如：高等数学">' +
+          '<input id="cTeacher" type="text" maxlength="20" placeholder="教师（可选）">' +
+          '<input id="cLoc" type="text" maxlength="30" placeholder="地点（可选）">' +
+          '<select id="cDay">' + CDAYS.map(function(nm,i){ return '<option value="' + (i+1) + '">' + nm + '</option>'; }).join('') + '</select>' +
+          '<input id="cWeeks" type="text" maxlength="20" placeholder="周次，如 1-16周">' +
+          '<input id="cStart" type="time" value="08:00">' +
+          '<input id="cEnd" type="time" value="09:40">' +
+        '</div>' +
+        '<button type="button" class="btn primary" data-act="addCourse" style="width:100%;padding:10px 0;">＋ 添加课程</button>' +
+      '</div>' +
+      '<div class="card fit-card"><h3>今日课程（' + CDAYS[td-1] + '）</h3>' + (todayList.length ? todayList.map(courseRowHtml).join('') : '<div class="course-empty">今天没有课 🎉</div>') + '</div>' +
+      '<div class="card fit-card"><h3>周课表</h3>' + dayBlocks + '</div>';
+  }
+  viewCourses.addEventListener('click', function(ev){
+    var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
+    if(!b) return;
+    var act = b.getAttribute('data-act');
+    if(act === 'addCourse'){
+      var nm = $('cName').value.trim();
+      if(!nm){ $('cName').focus(); return; }
+      state.courses = state.courses || [];
+      state.courses.push({
+        id: 'c' + Date.now() + Math.random().toString(36).slice(2,6),
+        name: nm,
+        teacher: $('cTeacher').value.trim(),
+        loc: $('cLoc').value.trim(),
+        day: +$('cDay').value,
+        weeks: $('cWeeks').value.trim(),
+        start: $('cStart').value,
+        end: $('cEnd').value
+      });
+      save(); renderCourses();
+    } else if(act === 'delCourse'){
+      var id = b.getAttribute('data-id');
+      state.courses = (state.courses || []).filter(function(c){ return c.id !== id; });
+      save(); renderCourses();
+    }
   });
 
   // PWA：可安装到桌面 / 主屏幕

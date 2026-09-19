@@ -1809,6 +1809,51 @@
     });
     return out;
   }
+  function dietAggKey(e){
+    if(e.kind === 'f'){
+      var u = e.perU || {};
+      return 'f|' + e.name + '|' + (e.unitLabel || '') + '|' + n0(u.kcal) + '|' + n0(u.p) + '|' + n0(u.c) + '|' + n0(u.f) + '|' + n0(u.fib);
+    }
+    var p = e.per || {};
+    return 'w|' + e.name + '|' + n0(p.kcal) + '|' + n0(p.p) + '|' + n0(p.c) + '|' + n0(p.f) + '|' + n0(p.fib);
+  }
+  function aggregateDietList(arr){
+    var map = {};
+    arr.forEach(function(e){
+      if(!e) return;
+      var k = dietAggKey(e);
+      if(!map[k]){
+        var base = {};
+        Object.keys(e).forEach(function(kk){ base[kk] = e[kk]; });
+        if(e.kind === 'f') base.count = 0; else base.grams = 0;
+        map[k] = base;
+      }
+      var t = map[k];
+      if(String(e.id || '') < String(t.id || '')) t.id = e.id;
+      if(e.kind === 'f') t.count = Math.round((t.count + (+e.count || 0)) * 100) / 100;
+      else t.grams = Math.round((t.grams + (+e.grams || 0)) * 10) / 10;
+    });
+    var out = Object.keys(map).map(function(k){ return map[k]; });
+    out.sort(function(a,b){ return String(a.id) < String(b.id) ? -1 : 1; });
+    out.forEach(function(e){
+      if(e.kind === 'f'){ e.label = e.count + (e.unitLabel || '份'); return; }
+      var ui = entryUnitInfo(e);
+      var q = ui.g ? (e.grams / ui.g) : 0;
+      if(ui.g && Math.abs(q - Math.round(q)) < 0.001) e.label = Math.round(q) + (ui.label || '个');
+      else e.label = e.grams + '克';
+    });
+    return out;
+  }
+  function normalizeAllDiet(){
+    var changed = false;
+    Object.keys(state.dietLog || {}).forEach(function(ds){
+      var raw = state.dietLog[ds] || [];
+      normalizeDietUnits(raw);
+      var cleaned = aggregateDietList(dedupeDietList(raw));
+      if(cleaned.length !== raw.length || JSON.stringify(cleaned) !== JSON.stringify(raw)){ state.dietLog[ds] = cleaned; changed = true; }
+    });
+    if(changed) save();
+  }
   function normalizeDietUnits(list){
     var changed = false;
     list.forEach(function(e){
@@ -1827,7 +1872,7 @@
     var ds = dietSelDate;
     var raw = dietArr(ds);
     if(normalizeDietUnits(raw)) save();
-    var cleaned = dedupeDietList(raw);
+    var cleaned = aggregateDietList(dedupeDietList(raw));
     if(cleaned.length !== raw.length){ state.dietLog[ds] = cleaned; save(); }
     var list = cleaned;
     var t = dietTotals(list);
@@ -2689,14 +2734,8 @@
     if(o.bullets && typeof dedupeBulletsData === 'function') dedupeBulletsData(o.bullets);
     if(o.dietLog && typeof dietEntryKey === 'function'){
       Object.keys(o.dietLog).forEach(function(dsk){
-        var arr = o.dietLog[dsk] || [], seen = {}, out = [];
-        arr.forEach(function(en){
-          if(!en) return;
-          var kk = dietEntryKey(en);
-          if(seen[kk]) return;
-          seen[kk] = 1; out.push(en);
-        });
-        o.dietLog[dsk] = out;
+        var arr = o.dietLog[dsk] || [];
+        o.dietLog[dsk] = (typeof aggregateDietList === 'function') ? aggregateDietList(arr) : arr;
       });
     }
     return o;
@@ -3200,6 +3239,7 @@
   window.addEventListener('beforeunload', flushJournal);
 
   renderDate();
+  normalizeAllDiet();
   render();
   loadJournal();
   applyLayoutPref();

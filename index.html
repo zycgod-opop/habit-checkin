@@ -628,6 +628,9 @@
   .chat-input input{flex:1;border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;font-size:14px;background:#fff;color:var(--ink);outline:none;font-family:inherit;}
   .chat-input input:focus{border-color:var(--red);}
 
+
+  .tab-desc{font-size:12px;color:var(--ink-3);line-height:1.7;margin:10px 4px 0;text-align:left;}
+
 </style>
 </head>
 <body>
@@ -647,6 +650,7 @@
         <button type="button" id="tabJournalBtn" class="tab" role="tab" aria-selected="false">心得</button>
         <button type="button" id="tabCourseBtn" class="tab" role="tab" aria-selected="false">课程</button>
       </nav>
+      <div class="tab-desc" id="tabDesc"></div>
     </header>
 
     <!-- 今日视图 -->
@@ -738,7 +742,7 @@
 
     <footer>
       <div>
-        <a id="syncOpenBtn">账号 / 同步</a> · <a id="exportBtn">导出数据</a> · <a id="importBtn">导入数据</a>
+        <a id="helpBtn">栏目说明</a> · <a id="syncOpenBtn">账号 / 同步</a> · <a id="exportBtn">导出数据</a> · <a id="importBtn">导入数据</a>
       </div>
       <div class="install-wrap"><button type="button" id="installAppBtn" class="install-btn">📲 安装为 App（安卓 / 桌面）</button></div>
       <div class="team-line">LA Clippers · 坚持就是胜利</div>
@@ -746,6 +750,36 @@
       <input type="file" id="importFile" accept=".json,application/json" hidden>
     </footer>
   </main>
+
+  <!-- 栏目说明 -->
+  <div class="overlay" id="helpOverlay" hidden>
+    <div class="card report-dialog" role="dialog" aria-modal="true">
+      <div class="day-head">
+        <div><p class="day-title">栏目说明</p><p class="day-sub">每个栏目是做什么的、符号怎么读</p></div>
+        <button type="button" class="btn ghost" id="helpClose">关闭</button>
+      </div>
+      <div class="report-body" style="max-height:66vh;">
+        <h4>今日</h4>
+        <div class="r-line">每天的习惯清单：完成一项点左侧圆圈打勾；顶部显示今日完成 X/N。点「暂停」可归档（保留历史），下方可恢复。</div>
+        <h4>统计</h4>
+        <div class="r-line">按年月看每个习惯：<b>红色实心</b>=已完成，<b>空心</b>=未完成，<b>白点</b>=写过未打卡原因，<b>高亮框</b>=今天；每项显示本月/本周/连续/最长天数。</div>
+        <div class="r-line">点未完成日期可写"为什么没做"；点已完成日期看当天回顾；「生成月报」汇总习惯/训练/饮食/心得。</div>
+        <h4>健身 · 饮食</h4>
+        <div class="r-line">记录每天吃了什么：搜索或自建食物，按 <b>克 / 份 / 个（根片盒）</b> 记录；固定装产品用 ×1×2 按份加。自动累计热量、蛋白、碳水、脂肪、纤维，并可设每日目标、看 7 天图和体重。</div>
+        <h4>健身 · 训练</h4>
+        <div class="r-line">按 <b>推 / 拉 / 腿</b> 三分化排周计划（数字 1-7 对应周一到周日）；勾选当天动作并记重量×次数；下方"训练心得"用罗马数字 I. II. III. 对应动作，可写单动作备注、打 1-5★，自动统计本周/本月/今年。</div>
+        <h4>健身 · 教练</h4>
+        <div class="r-line"><b>教练档案</b>=目标/身高体重等，用来估算热量与蛋白；<b>身体记录</b>=体重/体脂/腰围/睡眠/状态；<b>教练分析</b>=根据历史记录给结论；<b>教练对话</b>=直接问问题；<b>下一次训练建议</b>=具体加量方案；<b>计划生成</b>=自动排推拉腿计划；<b>安全自查</b>=红旗症状提示就医。</div>
+        <div class="r-line">教练会自动读取以前的训练、饮食、体重记录，不需要重新录入。</div>
+        <h4>心得（子弹笔记）</h4>
+        <div class="r-line">每日快速记录：<b>• 任务</b>（完成点圆圈变 X 划掉）、<b>○ 事件</b>、<b>– 笔记</b>；<b>&lt;</b>=排程到未来，<b>&gt;</b>=从过去迁移而来；含月度日历与未来日志。</div>
+        <h4>课程</h4>
+        <div class="r-line">录入学期的课：填开始周/结束周与单双周；在"学期设置"填开学第一周周一日期后自动算本周第几周（也可手动调节）；今日课程只显示本周该上的课，周课表里本周不上的会变淡。</div>
+        <h4>数据与安全</h4>
+        <div class="r-line">数据保存在你的设备/同步账号中；「导出数据」可备份。健康与训练建议仅供参考，不构成医疗诊断；出现胸痛、晕厥、麻木等请及时就医。</div>
+      </div>
+    </div>
+  </div>
 
   <!-- 账号同步 -->
   <div class="overlay" id="syncOverlay" hidden>
@@ -1209,6 +1243,18 @@
   }
 
   // ---- 视图切换 ----
+  var TAB_DESC = {
+    today: '今日：每天的习惯打卡清单，完成一项打一个勾，顶部显示今日进度。',
+    stats: '统计：按年月查看每个习惯哪天完成/没完成，含连续天数与每月小结报告。',
+    fit: '健身：记录饮食与训练，教练会根据你的历史数据给分析和建议。',
+    journal: '心得：子弹笔记式每日快速记录，含月度日历与未来日志。',
+    course: '课程：录入课表并设置周次，自动识别本周第几周、今天有什么课。'
+  };
+  var FIT_DESC = {
+    diet: '健身 · 饮食：记录吃了什么，自动算热量/蛋白/碳水/脂肪/纤维，可设目标、看趋势、记体重。',
+    train: '健身 · 训练：推/拉/腿三分化周计划，记录动作、重量×次数与训练心得。',
+    coach: '健身 · 教练：自动读取历史数据做分析，可对话提问、生成计划并做安全自查。'
+  };
   function showView(name){
     var views = { today: viewToday, stats: viewStats, fit: viewFit, journal: viewJournal, course: viewCourses };
     for(var k in views){ if(views[k]) views[k].hidden = (k !== name); }
@@ -1219,6 +1265,8 @@
       tabs[k2].classList.toggle('active', on);
       tabs[k2].setAttribute('aria-selected', on ? 'true' : 'false');
     }
+    var td2 = $('tabDesc');
+    if(td2) td2.textContent = TAB_DESC[name] || '';
     if(name === 'stats'){ renderStats(); }
     else if(name === 'fit'){ fitRefreshAll(); }
     else if(name === 'journal'){ renderJournal(); }
@@ -2379,6 +2427,8 @@
     if(fitSub === 'diet') renderDiet();
     else if(fitSub === 'train') renderTrain();
     else renderCoach();
+    var tdd = $('tabDesc');
+    if(tdd && fitSub && !viewFit.hidden) tdd.textContent = FIT_DESC[fitSub] || tdd.textContent;
   }
 
   // ---- 健身视图事件（委托）----
@@ -2866,6 +2916,10 @@
     }
   }
 
+  $('helpBtn').addEventListener('click', function(){ $('helpOverlay').hidden = false; });
+  $('helpClose').addEventListener('click', function(){ $('helpOverlay').hidden = true; try{ localStorage.setItem('habit-help-v1','1'); }catch(e){} });
+  $('helpOverlay').addEventListener('click', function(ev){ if(ev.target === $('helpOverlay')) $('helpOverlay').hidden = true; });
+  try{ if(!localStorage.getItem('habit-help-v1')){ $('helpOverlay').hidden = false; localStorage.setItem('habit-help-v1','1'); } }catch(e){}
   $('syncOpenBtn').addEventListener('click', function(){ renderSyncPanel(); $('syncOverlay').hidden = false; });
   $('syncClose').addEventListener('click', function(){ $('syncOverlay').hidden = true; });
   $('syncOverlay').addEventListener('click', function(ev){ if(ev.target === $('syncOverlay')) $('syncOverlay').hidden = true; });

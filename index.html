@@ -631,6 +631,13 @@
 
   .tab-desc{font-size:12px;color:var(--ink-3);line-height:1.7;margin:10px 4px 0;text-align:left;}
 
+
+  .field-help{margin-top:10px;font-size:12px;color:var(--ink-2);line-height:1.7;}
+  .field-help summary{cursor:pointer;color:var(--blue);font-weight:600;font-size:12.5px;}
+  .field-help ul{margin:6px 0 0;padding-left:18px;}
+  .field-help li{margin-bottom:4px;}
+  .field-help b{color:var(--ink);}
+
 </style>
 </head>
 <body>
@@ -3668,6 +3675,14 @@
           '<input id="pEquip" class="full" type="text" maxlength="30" value="'+esc(p.equipment||'健身房')+'" placeholder="器械条件，如：健身房/哑铃+单杠">' +
         '</div>' +
         '<button type="button" class="btn primary" data-act="saveProfile" style="width:100%;padding:10px 0;">保存档案</button>' +
+        '<details class="field-help"><summary>每个空怎么填？</summary><ul>' +
+          '<li><b>性别</b>：男/女——基础代谢公式不同，用于估算你每天能消耗多少热量。</li>' +
+          '<li><b>目标</b>：增肌＝多吃一点+力量增长；减脂＝少吃一点+保住肌肉；塑形＝接近维持热量+改善体态。教练会按目标来算热量和蛋白。</li>' +
+          '<li><b>年龄 / 身高</b>：用于基础代谢估算（配合体重）。</li>' +
+          '<li><b>水平</b>：新手=每个动作 3 组 8-12 次；中级=4 组；高级=4-5 组（6-12 次）。</li>' +
+          '<li><b>每周训练天数</b>：你实际能稳定练几天（2-6 天），用来排推/拉/腿计划，不是"想练几天"。</li>' +
+          '<li><b>器械条件</b>：如"健身房 / 哑铃+单杠 / 徒手"，用于选择可行动作和加量方式。</li>' +
+        '</ul></details>' +
       '</div>' +
       '<div class="card fit-card"><h3>今日身体记录</h3>' +
         '<div class="coach-grid">' +
@@ -3679,6 +3694,14 @@
           '<select id="mReady"><option value="">状态（可选）</option><option value="5">5 ★ 极佳</option><option value="4">4 ★ 良好</option><option value="3">3 ★ 一般</option><option value="2">2 ★ 疲累</option><option value="1">1 ★ 很差</option></select>' +
         '</div>' +
         '<button type="button" class="btn primary" data-act="saveMetric" style="width:100%;padding:10px 0;">保存记录</button>' +
+        '<details class="field-help"><summary>每个空怎么填？</summary><ul>' +
+          '<li><b>日期</b>：这条记录算哪一天，默认今天；补记前几天也可以改。</li>' +
+          '<li><b>体重 kg</b>：建议晨起空腹、上完厕所后称，穿同样衣服；用于热量目标、蛋白目标和 7 日趋势。</li>' +
+          '<li><b>体脂 %</b>（可不填）：体脂秤/体测的数值，不用天天测，每周 1 次看趋势即可。</li>' +
+          '<li><b>腰围 cm</b>（可不填）：肚脐水平绕一圈，早上空腹量；体重不动但腰围下降＝在变瘦。</li>' +
+          '<li><b>睡眠 h</b>（可不填）：昨晚睡了几个小时；长期低于 7h 教练会提示恢复风险。</li>' +
+          '<li><b>状态 1-5★</b>（可不填）：今天训练前的主观感觉，5=精力充沛，3=一般，1=很累；用于判断该加量还是该减量休息。</li>' +
+        '</ul></details>' +
         (metricChips ? '<div class="coach-metrics" style="margin-top:10px;">'+metricChips+'</div>' : '') +
       '</div>' +
       '<div class="card fit-card"><h3>教练分析</h3>' +

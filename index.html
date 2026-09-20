@@ -638,6 +638,14 @@
   .field-help li{margin-bottom:4px;}
   .field-help b{color:var(--ink);}
 
+
+  .kb-card{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:8px;}
+  .kb-head{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .kb-head b{font-size:13.5px;color:var(--ink);}
+  .kb-meta{font-size:11.5px;color:var(--ink-3);margin:3px 0 5px;}
+  .kb-card ul{margin:0;padding-left:18px;}
+  .kb-card li{font-size:12.5px;color:var(--ink-2);line-height:1.7;}
+
 </style>
 </head>
 <body>
@@ -907,7 +915,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [] } }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] } }; }
 
   function load(){
     try{
@@ -933,6 +941,7 @@
       raw.coach.metrics = (raw.coach.metrics && typeof raw.coach.metrics === 'object') ? raw.coach.metrics : {};
       raw.coach.plans = Array.isArray(raw.coach.plans) ? raw.coach.plans : [];
       raw.coach.chat = Array.isArray(raw.coach.chat) ? raw.coach.chat.slice(-200) : [];
+      raw.coach.kb = Array.isArray(raw.coach.kb) ? raw.coach.kb : [];
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1753,7 +1762,7 @@
           bullets: (data.bullets && typeof data.bullets === 'object') ? data.bullets : {},
           courses: Array.isArray(data.courses) ? data.courses : [],
           semester: (data.semester && typeof data.semester === 'object') ? { start: data.semester.start || '', weeks: +data.semester.weeks || 16, manualWeek: Math.max(0, +data.semester.manualWeek || 0) } : { start: '', weeks: 16, manualWeek: 0 },
-          coach: (data.coach && typeof data.coach === 'object') ? data.coach : { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [] }
+          coach: (data.coach && typeof data.coach === 'object') ? data.coach : { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] }
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -3573,13 +3582,35 @@
     var wc = weightSeries().length;
     return { trainDays:trainDays, sets:sets, dietDays:dietDays, weights:wc, first:first };
   }
+  function ckb(){ if(!state.coach) state.coach={}; if(!Array.isArray(state.coach.kb)) state.coach.kb=[]; return state.coach.kb; }
+  function kbMatch(q){
+    var hits=[], kw=['增肌','减脂','塑形','蛋白','蛋白粉','碳水','脂肪','热量','训练','饮食','力量','有氧','恢复','睡眠','加量','减量','停练'];
+    ckb().forEach(function(c){
+      var all=(c.title||'')+' '+(c.author||'')+' '+(c.tags||'')+' '+((c.points||[]).join(' '));
+      var score=0;
+      (c.tags||'').split(/[，,、\s]+/).forEach(function(t){ if(t && q.indexOf(t)>=0) score+=2; });
+      kw.forEach(function(k){ if(q.indexOf(k)>=0 && all.indexOf(k)>=0) score+=1; });
+      if(score>0){ c.score=score; hits.push(c); }
+    });
+    hits.sort(function(a,b){ return b.score-a.score; });
+    return hits;
+  }
   function coachGreeting(){
     var hs = historyStats();
     return '我是你的私人教练，已自动读取：训练 '+hs.trainDays+' 天 / 饮食 '+hs.dietDays+' 天 / 体重 '+hs.weights+' 条。可以问我：今天怎么练？蛋白还差多少？体重趋势？下周计划？';
   }
-  function coachReply(q){
+  function coachReply(q, skipKb){
     var td=tdeeCalc(), d7=diet7(), t7=train7(), wt=weightTrend(), hs=historyStats(), prog=progression();
     var text=q.trim();
+    if(!skipKb){
+      var hits=kbMatch(text);
+      if(hits.length){
+        var kbTxt='参考你的知识卡：\n'+hits.slice(0,2).map(function(c){
+          return '《'+(c.title||'未命名')+'》'+(c.author?(' · '+c.author):'')+(c.platform?(' · '+c.platform):'')+'\n'+(c.points||[]).slice(0,5).map(function(p){ return '· '+p; }).join('\n');
+        }).join('\n');
+        return kbTxt+'\n\n（以上是参考观点，不是医疗建议）\n\n'+coachReply(q, true);
+      }
+    }
     if(/胸痛|胸闷|晕厥|晕倒|严重头晕|麻木|无力|放射/.test(text)){
       return '先停下训练，不要继续这组动作：你描述的情况属于需要重视的安全信号。请尽快就医或急诊评估，不要自行诊断或用训练硬扛。等专业人员确认没问题后，我们再安排恢复训练。';
     }
@@ -3736,6 +3767,23 @@
         '<button type="button" class="btn primary" data-act="genPlan" style="width:100%;padding:10px 0;">生成训练计划</button>' +
         (lastPlan ? '<div style="margin-top:10px;">'+lastPlan.plan.map(function(x){ return '<div class="plan-day"><b>'+esc(x.day)+'</b>'+x.moves.map(function(mv){ return '<span>· '+esc(mv)+'</span>'; }).join('')+'</div>'; }).join('')+'</div>' : '') +
       '</div>' +
+      '<div class="card fit-card"><h3>知识库（参考观点）</h3>' +
+        '<div style="font-size:12px;color:var(--ink-3);margin:2px 2px 8px;">把你看到的视频/文章要点粘进来，教练对话会在相关提问时自动引用（与证据化建议分开，标明来源）。</div>' +
+        '<div class="coach-grid">' +
+          '<input id="kbTitle" class="full" type="text" maxlength="60" placeholder="标题，如：增肌减脂怎么吃（置顶视频）">' +
+          '<input id="kbAuthor" type="text" maxlength="30" value="谭成义" placeholder="作者/来源">' +
+          '<input id="kbPlatform" type="text" maxlength="20" value="抖音" placeholder="平台">' +
+          '<input id="kbTags" type="text" maxlength="40" placeholder="标签，逗号分隔：增肌,减脂,饮食">' +
+          '<input id="kbUrl" class="full" type="text" maxlength="200" placeholder="原视频/文章链接（可选）">' +
+          '<textarea id="kbPoints" class="full" rows="4" placeholder="每行写一条要点，例如：\n增肌期每天热量盈余 200-300 kcal\n每公斤体重蛋白 1.6-2.2g\n减脂期保留力量训练避免掉肌肉" style="border:1px solid var(--line-strong);border-radius:9px;padding:9px 10px;font-size:13.5px;background:#fff;color:var(--ink);outline:none;font-family:inherit;resize:vertical;"></textarea>' +
+        '</div>' +
+        '<button type="button" class="btn primary" data-act="kbSave" style="width:100%;padding:10px 0;">保存知识卡</button>' +
+        (ckb().length ? '<div style="margin-top:10px;">'+ckb().map(function(c){
+          return '<div class="kb-card"><div class="kb-head"><b>'+esc(c.title||'未命名')+'</b><button type="button" class="mnote-btn" data-act="kbDel" data-id="'+c.id+'">删除</button></div>'+
+            '<div class="kb-meta">'+[c.author,c.platform,(c.tags||'')].filter(function(x){return x;}).map(esc).join(' · ')+(c.url?(' · <a href="'+esc(c.url)+'" target="_blank" rel="noopener">原链接</a>'):'')+'</div>'+
+            '<ul>'+(c.points||[]).map(function(p){ return '<li>'+esc(p)+'</li>'; }).join('')+'</ul></div>';
+        }).join('')+'</div>' : '<div class="bj-empty">还没有知识卡。</div>') +
+      '</div>' +
       '<div class="card fit-card"><h3>安全自查（不构成医疗建议）</h3>' +
         '<div class="sym-row">' +
           '<label><input type="checkbox" class="sym" value="chest"> 胸痛/胸闷</label>' +
@@ -3755,6 +3803,15 @@
     var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
     if(!b) return;
     var act = b.getAttribute('data-act');
+    if(act === 'kbSave'){
+      var kt=$('kbTitle').value.trim(); if(!kt){ $('kbTitle').focus(); return; }
+      var pts=$('kbPoints').value.split('\n').map(function(x){ return x.replace(/^[-•·\s]+/,'').trim(); }).filter(function(x){ return x; });
+      ckb().push({ id:'k'+Date.now()+Math.random().toString(36).slice(2,6), title:kt, author:$('kbAuthor').value.trim(), platform:$('kbPlatform').value.trim(), url:$('kbUrl').value.trim(), tags:$('kbTags').value.trim(), points:pts, created:today });
+      save(); renderCoach(); return;
+    }
+    if(act === 'kbDel'){
+      var kid=b.getAttribute('data-id'); state.coach.kb=ckb().filter(function(c){ return c.id!==kid; }); save(); renderCoach(); return;
+    }
     if(act === 'chatSend'){ var ci=$('chatInput'); sendChat(ci ? ci.value : ''); return; }
     if(act === 'chatQuick'){ sendChat(b.getAttribute('data-q')); return; }
     if(act === 'chatClear'){ if(window.confirm('清空与教练的对话记录？')){ state.coach.chat=[]; save(); renderCoach(); } return; }

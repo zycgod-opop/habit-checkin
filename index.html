@@ -3551,6 +3551,21 @@
         else adv.push({ t:'info', tag:'下一步', text:x.name+'：上次 '+x.last.top+'，下次先加到 +2.5% 重量；做不到就同样重量多做 1 次。' });
       });
     } else if(t7.sessions>0) adv.push({ t:'info', tag:'进阶依据', text:'同一动作还没有两次可对比记录：先按上周重量×次数完成，下次再比较。' });
+    if(state.coach.kb && state.coach.kb.length){
+      var topics=[];
+      if(td && d7.days>=3 && d7.protein < td.protein*0.9) topics.push('protein');
+      if(td && p.goal==='增肌' && d7.kcal < td.kcal*0.9) topics.push('calories');
+      if(p.goal==='减脂') topics.push('fatloss');
+      if(p.goal==='增肌') topics.push('bulk');
+      if(t7.sessions>0) topics.push('training');
+      if(t7.avgStar && t7.avgStar<3) topics.push('recovery');
+      topics.push('mealplan');
+      var used={}, added=0;
+      topics.forEach(function(tp){
+        if(added>=3) return;
+        kbRules(tp,1).forEach(function(k){ if(added<3 && !used[k.rule.text]){ used[k.rule.text]=1; added++; adv.push({ t:'info', tag:'知识包', text:'【'+k.pack+'】'+k.rule.text }); } });
+      });
+    }
     var order={ bad:0,warn:1,info:2,good:3 };
     adv.sort(function(a,b){ return order[a.t]-order[b.t]; });
     return adv.slice(0,8);
@@ -3595,6 +3610,61 @@
     hits.sort(function(a,b){ return b.score-a.score; });
     return hits;
   }
+  var KB_TOPICS = {
+    protein:['蛋白','蛋白质','鸡胸','蛋白粉','氨基酸','乳清'],
+    calories:['热量','卡路里','kcal','大卡','盈余','缺口','摄入','消耗','代谢'],
+    fatloss:['减脂','刷脂','掉秤','有氧','步数','平台','空腹','控脂'],
+    bulk:['增肌','变壮','力量增长','体重上涨','增重'],
+    training:['训练','组数','次数','动作','容量','频率','RIR','力竭','渐进','加量','复合','孤立','分化'],
+    recovery:['睡眠','休息','恢复','疲劳','过度训练','酸痛','拉伸'],
+    carbsfat:['碳水','脂肪','主食','米饭','油','低脂','高脂'],
+    weighin:['称重','体重','腰围','体脂','记录','测量','晨起'],
+    mealplan:['饮食','吃什么','餐','食谱','加餐','外卖','食堂','吃多少']
+  };
+  function kbTopicOf(t){
+    var best='general', score=0;
+    Object.keys(KB_TOPICS).forEach(function(k){
+      var sc=0; KB_TOPICS[k].forEach(function(w){ if(t.indexOf(w)>=0) sc++; });
+      if(sc>score){ score=sc; best=k; }
+    });
+    return score>0 ? best : 'general';
+  }
+  function cleanSrt(text){
+    return String(text||'').split(/\r?\n/).filter(function(l){
+      l=l.trim();
+      return l && !/^\d+$/.test(l) && l.indexOf('-->')<0 && l.indexOf('WEBVTT')<0;
+    }).join(' ');
+  }
+  function extractKbRules(text){
+    var clean=cleanSrt(text);
+    var parts=clean.split(/[。！？!?；;\n]+/).map(function(x){ return x.trim(); }).filter(function(x){ return x.length>=8; });
+    var seen={}, out=[];
+    parts.forEach(function(p){
+      var topic=kbTopicOf(p), key=topic+'|'+p;
+      if(seen[key]) return; seen[key]=1;
+      if(topic!=='general' || p.length>=14) out.push({ topic:topic, text:p.slice(0,120) });
+    });
+    var byTopic={}, picked=[];
+    out.forEach(function(r){ if(!byTopic[r.topic]){ byTopic[r.topic]=1; picked.push(r); } });
+    out.forEach(function(r){ if(picked.length<24 && picked.indexOf(r)<0) picked.push(r); });
+    return picked.slice(0,24);
+  }
+  function kbRules(topic, limit){
+    var packs=state.coach.kb||[], out=[];
+    packs.slice().reverse().forEach(function(p){
+      (p.rules||[]).forEach(function(r){ if((!topic||r.topic===topic) && out.length<(limit||3)) out.push({ pack:p.name, source:p.source, rule:r }); });
+    });
+    return out;
+  }
+  function kbImport(text, sourceName){
+    var rules=extractKbRules(text);
+    if(!rules.length) return 0;
+    state.coach.kb=state.coach.kb||[];
+    state.coach.kb.push({ id:'kb'+Date.now(), name:(sourceName||'谭成义·增肌减脂'), source:'B站 谭成义（用户导入文稿/字幕）', importedAt:today, rules:rules });
+    if(state.coach.kb.length>10) state.coach.kb=state.coach.kb.slice(-10);
+    save(); return rules.length;
+  }
+
   function coachGreeting(){
     var hs = historyStats();
     return '我是你的私人教练，已自动读取：训练 '+hs.trainDays+' 天 / 饮食 '+hs.dietDays+' 天 / 体重 '+hs.weights+' 条。可以问我：今天怎么练？蛋白还差多少？体重趋势？下周计划？';
@@ -3654,6 +3724,11 @@
     }
     if(/体脂|腰围|围度|体测|身体/.test(text)){
       return '身体数据：体重 '+(wt?wt.cur:'—')+' kg'+(wt&&wt.change!==null?('（7日变化 '+wt.change+' kg）'):'')+'；历史记录 '+hs.weights+' 条。腰围/体脂在「今日身体记录」里填一次，我就能一起做趋势判断。';
+    }
+    if(/谭成义|知识包|笔记|视频/.test(text)){
+      var rr=kbRules('',5);
+      if(!rr.length) return '我已登记「谭成义 · 增肌减脂」知识包，但他的视频暂无公开字幕可提取。你把置顶视频的文稿/字幕粘贴到「教练知识包」里，我会自动提炼并接入分析。';
+      return '根据已装载的知识包：\n'+rr.map(function(k){ return '· ['+k.rule.topic+'] '+k.rule.text; }).join('\n')+'\n（来源：'+rr[0].source+'，为你导入的文稿提炼）';
     }
     if(/你好|帮助|能做什么|会什么|怎么用/.test(text)){
       return '我能基于你自己的记录回答：①今天/本周怎么练 ②某个动作该不该加量 ③蛋白/热量/纤维差多少 ④体重趋势与减脂增肌速度 ⑤恢复与休息建议 ⑥生成推拉腿计划。涉及胸痛、晕厥、麻木等安全问题时，我会先让你就医，不做训练建议。';
@@ -3745,6 +3820,19 @@
         (td ? '<div style="font-size:12px;color:var(--ink-3);margin:2px 2px 8px;">估算目标：'+td.kcal+' kcal / 蛋白 '+td.protein+' g（'+p.goal+'）</div>' : '') +
         '<ul class="advice-list">'+adv.map(function(a){ return '<li><span class="advice-tag '+a.t+'">'+a.tag+'</span><span>'+a.text+'</span></li>'; }).join('')+'</ul>' +
       '</div>' +
+      '<div class="card fit-card"><h3>教练知识包</h3>' +
+        (function(){
+          var packs=state.coach.kb||[];
+          if(!packs.length) return '<div style="font-size:12.5px;color:var(--ink-3);line-height:1.8;margin-bottom:8px;">已登记知识包：<b>谭成义 · 增肌减脂</b>（来源：B站 谭成义，含《三个月减脂计划安排》等重点视频）。<br>该视频暂无可提取的公开字幕，导入文稿或字幕文件后会自动提炼并用于分析与对话。</div>';
+          return packs.map(function(p){ return '<div style="font-size:12.5px;color:var(--ink-2);line-height:1.8;margin-bottom:6px;"><b>'+esc(p.name)+'</b> · 已提炼 '+p.rules.length+' 条要点 · '+fmtCN(p.importedAt)+'<br><span style="color:var(--ink-3);">'+esc(p.source)+'</span></div>'; }).join('');
+        })() +
+        '<textarea id="kbText" maxlength="20000" placeholder="把置顶视频的字幕/文稿粘贴到这里（.srt/.txt 均可），点下方按钮自动提炼…" style="width:100%;min-height:80px;border:1px solid var(--line-strong);border-radius:10px;padding:9px 11px;font-size:13px;background:var(--surface-2);color:var(--ink);outline:none;font-family:inherit;line-height:1.6;resize:vertical;"></textarea>' +
+        '<div class="chat-input" style="margin-top:8px;"><input id="kbFile" type="file" accept=".txt,.srt,.md" style="flex:1;font-size:12px;"><button type="button" class="btn primary" data-act="kbImport" style="padding:9px 14px;">提炼并装载</button></div>' +
+        '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+          '<span style="font-size:11.5px;color:var(--ink-3);">只保存提炼后的要点，不上传原视频内容</span>' +
+          ((state.coach.kb&&state.coach.kb.length)?'<button type="button" class="mnote-btn" data-act="kbClear">清空知识包</button>':'') +
+        '</div>' +
+      '</div>' +
       '<div class="card fit-card"><h3>教练对话</h3>' +
         chatHtml() +
         '<div class="chat-quick">' +
@@ -3812,6 +3900,20 @@
     if(act === 'kbDel'){
       var kid=b.getAttribute('data-id'); state.coach.kb=ckb().filter(function(c){ return c.id!==kid; }); save(); renderCoach(); return;
     }
+    if(act === 'kbImport'){
+      var txt=$('kbText')?$('kbText').value:'';
+      var f=$('kbFile'); var fname=f && f.files && f.files[0];
+      function doImport(content){
+        if(!content || !content.trim()) return;
+        var cnt=kbImport(content,'谭成义·增肌减脂');
+        renderCoach();
+        showHint('已提炼并装载 '+cnt+' 条要点');
+      }
+      if(fname){ var rd=new FileReader(); rd.onload=function(){ doImport(String(rd.result||'')); }; rd.readAsText(fname,'utf-8'); }
+      else doImport(txt);
+      return;
+    }
+    if(act === 'kbClear'){ if(window.confirm('清空所有教练知识包？')){ state.coach.kb=[]; save(); renderCoach(); } return; }
     if(act === 'chatSend'){ var ci=$('chatInput'); sendChat(ci ? ci.value : ''); return; }
     if(act === 'chatQuick'){ sendChat(b.getAttribute('data-q')); return; }
     if(act === 'chatClear'){ if(window.confirm('清空与教练的对话记录？')){ state.coach.chat=[]; save(); renderCoach(); } return; }

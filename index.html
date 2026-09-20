@@ -824,7 +824,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16 } }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 } }; }
 
   function load(){
     try{
@@ -844,7 +844,7 @@
       raw.foodServing = (raw.foodServing && typeof raw.foodServing === 'object') ? raw.foodServing : {};
       raw.bullets = (raw.bullets && typeof raw.bullets === 'object') ? raw.bullets : {};
       raw.courses = Array.isArray(raw.courses) ? raw.courses : [];
-      raw.semester = (raw.semester && typeof raw.semester === 'object') ? { start: raw.semester.start || '', weeks: +raw.semester.weeks || 16 } : { start: '', weeks: 16 };
+      raw.semester = (raw.semester && typeof raw.semester === 'object') ? { start: raw.semester.start || '', weeks: +raw.semester.weeks || 16, manualWeek: Math.max(0, +raw.semester.manualWeek || 0) } : { start: '', weeks: 16, manualWeek: 0 };
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1650,7 +1650,7 @@
           foodServing: (data.foodServing && typeof data.foodServing === 'object') ? data.foodServing : {},
           bullets: (data.bullets && typeof data.bullets === 'object') ? data.bullets : {},
           courses: Array.isArray(data.courses) ? data.courses : [],
-          semester: (data.semester && typeof data.semester === 'object') ? { start: data.semester.start || '', weeks: +data.semester.weeks || 16 } : { start: '', weeks: 16 }
+          semester: (data.semester && typeof data.semester === 'object') ? { start: data.semester.start || '', weeks: +data.semester.weeks || 16, manualWeek: Math.max(0, +data.semester.manualWeek || 0) } : { start: '', weeks: 16, manualWeek: 0 }
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -3163,12 +3163,14 @@
     return dstrFromParts(d.getFullYear(), d.getMonth()+1, d.getDate());
   }
   function semesterInfo(){
-    var sem = state.semester || { start:'', weeks:16 };
+    var sem = state.semester || { start:'', weeks:16, manualWeek:0 };
     var weeks = Math.max(1, +sem.weeks || 16);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(sem.start || '')) return { set:false, week:0, weeks:weeks };
+    var manual = Math.max(0, +sem.manualWeek || 0);
+    if(manual > 0) return { set:true, week:manual, weeks:weeks, manual:true };
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(sem.start || '')) return { set:false, week:0, weeks:weeks, manual:false };
     var m0 = mondayStrOf(sem.start), mNow = mondayStrOf(today);
     var diff = Math.floor((Date.parse(mNow + 'T00:00:00') - Date.parse(m0 + 'T00:00:00')) / 86400000);
-    return { set:true, week: Math.floor(diff / 7) + 1, weeks:weeks };
+    return { set:true, week: Math.floor(diff / 7) + 1, weeks:weeks, manual:false };
   }
   function weekTextOf(c){
     if(c.weekStart){
@@ -3216,8 +3218,8 @@
         (arr.length ? arr.map(function(c){ return courseRowHtml(c, wk); }).join('') : '<div class="course-empty">无课程</div>') + '</div>';
     }).join('');
     var weekLine = si.set
-      ? '<div style="font-size:13px;color:var(--ink-2);margin:6px 2px 0;">今天是 <b style="color:var(--red);">第 ' + si.week + ' 周</b>（学期共 ' + si.weeks + ' 周）' + (si.week < 1 ? ' · 还没开学' : (si.week > si.weeks ? ' · 已放假' : '')) + '</div>'
-      : '<div style="font-size:12.5px;color:var(--ink-3);margin:6px 2px 0;">设置开学第一周的周一日期后，会自动识别本周是第几周</div>';
+      ? '<div style="font-size:13px;color:var(--ink-2);margin:6px 2px 0;">今天是 <b style="color:var(--red);">第 ' + si.week + ' 周</b>（学期共 ' + si.weeks + ' 周）' + (si.manual ? ' · 手动设置' : ' · 自动识别') + (si.week < 1 ? ' · 还没开学' : (si.week > si.weeks ? ' · 已放假' : '')) + '</div>'
+      : '<div style="font-size:12.5px;color:var(--ink-3);margin:6px 2px 0;">设置开学日期可自动识别周次，也可以在上面手动填写当前第几周</div>';
 
     viewCourses.innerHTML = '<div id="courseBody"></div>';
     $('courseBody').innerHTML =
@@ -3226,6 +3228,13 @@
           '<input id="sStart" class="full" type="date" value="' + esc((state.semester && state.semester.start) || '') + '">' +
           '<input id="sWeeks" type="number" min="1" max="30" value="' + ((state.semester && state.semester.weeks) || 16) + '" placeholder="总周数">' +
           '<button type="button" class="btn ghost" data-act="saveSemester">保存学期设置</button>' +
+        '</div>' +
+        '<div style="font-size:12.5px;color:var(--ink-2);margin:4px 2px 6px;">当前第几周（留空＝自动按开学日期算）</div>' +
+        '<div class="course-grid" style="grid-template-columns:1fr auto auto auto;">' +
+          '<input id="sManualWeek" type="number" min="0" max="40" value="' + ((state.semester && state.semester.manualWeek) || '') + '" placeholder="自动">' +
+          '<button type="button" class="btn ghost" data-act="weekMinus">−</button>' +
+          '<button type="button" class="btn ghost" data-act="weekPlus">＋</button>' +
+          '<button type="button" class="btn ghost" data-act="weekAuto">自动</button>' +
         '</div>' + weekLine +
       '</div>' +
       '<div class="card fit-card"><h3>录入课程</h3>' +
@@ -3259,12 +3268,31 @@
       var w2 = $('cW2');
       if(w2 && (!w2.value || +w2.value < a)) w2.value = Math.max(a, semesterInfo().weeks);
       updateWeekHint();
+    } else if(ev.target.id === 'sManualWeek'){
+      state.semester = state.semester || { start:'', weeks:16, manualWeek:0 };
+      var mv = Math.max(0, Math.min(40, +ev.target.value || 0));
+      state.semester.manualWeek = mv;
+      save(); renderCourses();
     } else if(ev.target.id === 'cW2' || ev.target.id === 'cParity'){ updateWeekHint(); }
   });
   viewCourses.addEventListener('click', function(ev){
     var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
     if(!b) return;
     var act = b.getAttribute('data-act');
+    if(act === 'weekMinus' || act === 'weekPlus'){
+      var cur = semesterInfo().week || 1;
+      var next = Math.max(1, Math.min(40, cur + (act === 'weekPlus' ? 1 : -1)));
+      state.semester = state.semester || { start:'', weeks:16, manualWeek:0 };
+      state.semester.manualWeek = next;
+      save(); renderCourses();
+      return;
+    }
+    if(act === 'weekAuto'){
+      state.semester = state.semester || { start:'', weeks:16, manualWeek:0 };
+      state.semester.manualWeek = 0;
+      save(); renderCourses();
+      return;
+    }
     if(act === 'saveSemester'){
       state.semester = { start: ($('sStart') && $('sStart').value) || '', weeks: Math.max(1, +($('sWeeks') && $('sWeeks').value) || 16) };
       save(); renderCourses();

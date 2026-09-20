@@ -588,6 +588,34 @@
   .course-item.off{opacity:.45;}
   .course-item.off .course-main b::after{content:' · 本周不上';font-size:10px;color:var(--ink-3);font-weight:400;}
 
+
+  /* tabs: 6 items */
+  .tabs{max-width:none;}
+  .tab{font-size:12.5px;padding:9px 0;}
+
+  /* coach */
+  .coach-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .coach-grid input,.coach-grid select,.coach-grid .full{border:1px solid var(--line-strong);border-radius:9px;padding:9px 10px;font-size:13.5px;background:#fff;color:var(--ink);outline:none;font-family:inherit;}
+  .coach-grid input:focus,.coach-grid select:focus{border-color:var(--red);}
+  .coach-grid .full{grid-column:1/-1;}
+  .coach-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;}
+  .cm{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;}
+  .cm b{display:block;font-size:16px;color:var(--ink);}
+  .cm span{font-size:11px;color:var(--ink-3);}
+  .advice-list{list-style:none;margin:0;padding:0;}
+  .advice-list li{display:flex;gap:8px;padding:8px 4px;font-size:13.5px;line-height:1.65;color:var(--ink);border-top:1px solid var(--line);}
+  .advice-list li:first-child{border-top:none;}
+  .advice-tag{flex:none;font-size:10.5px;font-weight:700;border-radius:6px;padding:2px 7px;height:20px;line-height:16px;}
+  .advice-tag.good{background:var(--accent-soft,#e8f9ef);color:var(--accent-strong,#16a34a);}
+  .advice-tag.warn{background:#fff4e5;color:#b26a00;}
+  .advice-tag.bad{background:var(--red-soft);color:var(--red);}
+  .advice-tag.info{background:var(--blue-soft);color:var(--blue);}
+  .plan-day{margin-bottom:8px;}
+  .plan-day b{font-size:13px;color:var(--ink);}
+  .plan-day span{display:block;font-size:12.5px;color:var(--ink-2);line-height:1.7;margin-left:4px;}
+  .sym-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+  .sym-row label{font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:5px 8px;}
+
 </style>
 </head>
 <body>
@@ -606,6 +634,7 @@
         <button type="button" id="tabFitBtn" class="tab" role="tab" aria-selected="false">健身</button>
         <button type="button" id="tabJournalBtn" class="tab" role="tab" aria-selected="false">心得</button>
         <button type="button" id="tabCourseBtn" class="tab" role="tab" aria-selected="false">课程</button>
+        <button type="button" id="tabCoachBtn" class="tab" role="tab" aria-selected="false">教练</button>
       </nav>
     </header>
 
@@ -692,6 +721,11 @@
     <!-- 课程 -->
     <section id="viewCourses" hidden>
       <div id="courseBody"></div>
+    </section>
+
+    <!-- 私人教练 -->
+    <section id="viewCoach" hidden>
+      <div id="coachBody"></div>
     </section>
 
     <footer>
@@ -824,7 +858,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 } }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [] } }; }
 
   function load(){
     try{
@@ -845,6 +879,10 @@
       raw.bullets = (raw.bullets && typeof raw.bullets === 'object') ? raw.bullets : {};
       raw.courses = Array.isArray(raw.courses) ? raw.courses : [];
       raw.semester = (raw.semester && typeof raw.semester === 'object') ? { start: raw.semester.start || '', weeks: +raw.semester.weeks || 16, manualWeek: Math.max(0, +raw.semester.manualWeek || 0) } : { start: '', weeks: 16, manualWeek: 0 };
+      raw.coach = (raw.coach && typeof raw.coach === 'object') ? raw.coach : {};
+      raw.coach.profile = (raw.coach.profile && typeof raw.coach.profile === 'object') ? raw.coach.profile : { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' };
+      raw.coach.metrics = (raw.coach.metrics && typeof raw.coach.metrics === 'object') ? raw.coach.metrics : {};
+      raw.coach.plans = Array.isArray(raw.coach.plans) ? raw.coach.plans : [];
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1163,9 +1201,9 @@
 
   // ---- 视图切换 ----
   function showView(name){
-    var views = { today: viewToday, stats: viewStats, fit: viewFit, journal: viewJournal, course: viewCourses };
+    var views = { today: viewToday, stats: viewStats, fit: viewFit, journal: viewJournal, course: viewCourses, coach: viewCoach };
     for(var k in views){ if(views[k]) views[k].hidden = (k !== name); }
-    var tabs = { today: tabTodayBtn, stats: tabStatsBtn, fit: tabFitBtn, journal: tabJournalBtn, course: tabCourseBtn };
+    var tabs = { today: tabTodayBtn, stats: tabStatsBtn, fit: tabFitBtn, journal: tabJournalBtn, course: tabCourseBtn, coach: tabCoachBtn };
     for(var k2 in tabs){
       if(!tabs[k2]) continue;
       var on = (k2 === name);
@@ -1176,6 +1214,7 @@
     else if(name === 'fit'){ fitRefreshAll(); }
     else if(name === 'journal'){ renderJournal(); }
     else if(name === 'course'){ renderCourses(); }
+    else if(name === 'coach'){ renderCoach(); }
     else { renderDate(); }
   }
 
@@ -1595,6 +1634,7 @@
   tabFitBtn.addEventListener('click', function(){ showView('fit'); });
   $('tabJournalBtn').addEventListener('click', function(){ showView('journal'); });
   $('tabCourseBtn').addEventListener('click', function(){ showView('course'); });
+  $('tabCoachBtn').addEventListener('click', function(){ showView('coach'); });
   $('prevMonthBtn').addEventListener('click', function(){ changeMonth(-1); });
   $('nextMonthBtn').addEventListener('click', function(){ changeMonth(1); });
   backTodayBtn.addEventListener('click', function(){
@@ -1650,7 +1690,8 @@
           foodServing: (data.foodServing && typeof data.foodServing === 'object') ? data.foodServing : {},
           bullets: (data.bullets && typeof data.bullets === 'object') ? data.bullets : {},
           courses: Array.isArray(data.courses) ? data.courses : [],
-          semester: (data.semester && typeof data.semester === 'object') ? { start: data.semester.start || '', weeks: +data.semester.weeks || 16, manualWeek: Math.max(0, +data.semester.manualWeek || 0) } : { start: '', weeks: 16, manualWeek: 0 }
+          semester: (data.semester && typeof data.semester === 'object') ? { start: data.semester.start || '', weeks: +data.semester.weeks || 16, manualWeek: Math.max(0, +data.semester.manualWeek || 0) } : { start: '', weeks: 16, manualWeek: 0 },
+          coach: (data.coach && typeof data.coach === 'object') ? data.coach : { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [] }
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -3317,6 +3358,227 @@
       var id = b.getAttribute('data-id');
       state.courses = (state.courses || []).filter(function(c){ return c.id !== id; });
       save(); renderCourses();
+    }
+  });
+
+  // ================= 私人教练 =================
+  var viewCoach = $('viewCoach'), tabCoachBtn = $('tabCoachBtn');
+  var coachPlan = null;
+
+  function cf(){ if(!state.coach) state.coach = {}; if(!state.coach.profile) state.coach.profile = { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }; return state.coach.profile; }
+  function cm(){ if(!state.coach) state.coach = {}; if(!state.coach.metrics) state.coach.metrics = {}; return state.coach.metrics; }
+  function cAvg(a){ if(!a.length) return 0; var s=0; a.forEach(function(x){ s+=x; }); return s/a.length; }
+  function r1(x){ return Math.round(x*10)/10; }
+  function e1rm(kg,reps){ kg=+kg||0; reps=+reps||0; return (kg>0&&reps>0)? kg*(1+reps/30) : 0; }
+  function lastNDates(n){ var out=[]; for(var i=n-1;i>=0;i--) out.push(addDaysStr(today,-i)); return out; }
+  function weightSeries(){
+    var map = {};
+    Object.keys(state.weights||{}).forEach(function(d){ if(state.weights[d]) map[d]=+state.weights[d]; });
+    Object.keys(cm()).forEach(function(d){ if(cm()[d] && cm()[d].weight) map[d]=+cm()[d].weight; });
+    return Object.keys(map).sort().map(function(d){ return [d, map[d]]; });
+  }
+  function latestMetric(){ var arr=weightSeries(); return arr.length ? arr[arr.length-1] : null; }
+  function tdeeCalc(){
+    var p=cf(), w=latestMetric(); if(!w) return null;
+    var bmr = 10*w[1] + 6.25*(+p.height||170) - 5*(+p.age||20) + ((p.sex==='女')?-161:5);
+    var f = (+p.days<=2)?1.375:((+p.days<=4)?1.55:((+p.days<=6)?1.725:1.9));
+    var tdee = bmr*f;
+    var target = p.goal==='减脂' ? tdee*0.82 : (p.goal==='增肌' ? tdee*1.12 : tdee*0.95);
+    var protein = w[1]*(p.goal==='减脂'?2.0:1.8);
+    return { tdee:Math.round(tdee), kcal:Math.round(target), protein:Math.round(protein), weight:w[1] };
+  }
+  function diet7(){
+    var days=lastNDates(7), kcal=[], p=[], fib=[], logged=0;
+    days.forEach(function(d){ var arr=state.dietLog[d]||[]; if(arr.length){ logged++; var t=dietTotals(arr); kcal.push(t.kcal); p.push(t.p); fib.push(t.fib||0); } });
+    return { days:logged, kcal:cAvg(kcal), protein:cAvg(p), fiber:cAvg(fib) };
+  }
+  function train7(){
+    var days=lastNDates(7), sessions=0, sets=0, grp={'推':0,'拉':0,'腿':0}, stars=[];
+    days.forEach(function(d){
+      var arr=state.workouts[d]||[];
+      if(arr.length){ sessions++; arr.forEach(function(en){ sets += (en.sets?en.sets.length:0); if(grp[en.group]!==undefined) grp[en.group]+=(en.sets?en.sets.length:0); }); }
+      var rec=state.trainDays[d];
+      if(rec && rec.stars>0) stars.push(rec.stars);
+    });
+    return { sessions:sessions, sets:sets, grp:grp, avgStar:r1(cAvg(stars)) };
+  }
+  function progression(){
+    var byMove = {};
+    Object.keys(state.workouts||{}).sort().forEach(function(d){
+      (state.workouts[d]||[]).forEach(function(en){
+        var best=0, top='';
+        (en.sets||[]).forEach(function(s){ var e=e1rm(s[0],s[1]); if(e>best){ best=e; top=(s[0]||'')+'kg×'+(s[1]||''); } });
+        if(best>0){ byMove[en.name]=byMove[en.name]||[]; byMove[en.name].push({ d:d, e:best, top:top }); }
+      });
+    });
+    var out=[];
+    Object.keys(byMove).forEach(function(name){
+      var a=byMove[name]; var line={ name:name, last:a[a.length-1], prev:(a.length>1?a[a.length-2]:null), delta:0 };
+      if(line.prev) line.delta = r1((line.last.e - line.prev.e)/line.prev.e*100);
+      out.push(line);
+    });
+    out.sort(function(a,b){ return b.last.d < a.last.d ? -1 : 1; });
+    return out;
+  }
+  function weightTrend(){
+    var arr=weightSeries(); if(arr.length<2) return null;
+    var days=lastNDates(7), prev=lastNDates(14).slice(0,7);
+    var cur=arr.filter(function(x){ return days.indexOf(x[0])>=0; }).map(function(x){ return x[1]; });
+    var old=arr.filter(function(x){ return prev.indexOf(x[0])>=0; }).map(function(x){ return x[1]; });
+    if(!cur.length || !old.length) return { cur:arr[arr.length-1][1], change:null };
+    return { cur:r1(cAvg(cur)), prev:r1(cAvg(old)), change:r1(cAvg(cur)-cAvg(old)) };
+  }
+  function buildAdvice(){
+    var p=cf(), td=tdeeCalc(), d7=diet7(), t7=train7(), wt=weightTrend(), adv=[];
+    if(!td){ adv.push({ t:'info', tag:'待补数据', text:'先在下面记录一次体重，才能计算每日热量/蛋白目标。' }); }
+    else {
+      var kt=td.kcal, pt=td.protein;
+      adv.push({ t:'info', tag:'目标', text:'按你的资料估算：维持约 '+td.tdee+' kcal；'+p.goal+'目标约 '+kt+' kcal、蛋白 '+pt+' g/天（参考值）。' });
+      if(d7.days>=3){
+        if(d7.protein < pt*0.9) adv.push({ t:'warn', tag:'蛋白不足', text:'近7天日均蛋白 '+Math.round(d7.protein)+' g，目标 '+pt+' g，还差约 '+Math.round(pt-d7.protein)+' g：可加 1 勺蛋白粉 + 1 个鸡蛋（≈30g）。' });
+        else adv.push({ t:'good', tag:'蛋白达标', text:'近7天日均蛋白 '+Math.round(d7.protein)+' g，达到目标。' });
+        if(d7.kcal && d7.kcal < 1200) adv.push({ t:'bad', tag:'热量过低', text:'近7天日均热量低于 1200 kcal，长期过低有风险；请逐步提高并咨询专业人士。' });
+        else if(p.goal==='增肌' && d7.kcal < kt*0.9) adv.push({ t:'warn', tag:'增肌热量不足', text:'日均 '+Math.round(d7.kcal)+' kcal，比目标少约 '+Math.round(kt-d7.kcal)+' kcal：加一份主食/牛奶。' });
+        else if(p.goal==='减脂' && d7.kcal > kt*1.1) adv.push({ t:'warn', tag:'热量超出', text:'日均 '+Math.round(d7.kcal)+' kcal，比目标高约 '+Math.round(d7.kcal-kt)+' kcal：先减少零食/含糖饮料。' });
+      } else adv.push({ t:'info', tag:'饮食数据', text:'近7天只记录了 '+d7.days+' 天饮食，记满 3 天以上才能判断趋势。' });
+    }
+    if(wt && wt.change!==null){
+      var pc = (wt.change/Math.max(1,wt.cur))*100;
+      if(p.goal==='增肌'){
+        if(wt.change < 0) adv.push({ t:'warn', tag:'体重下降', text:'近7天体重变化 '+wt.change+' kg：增肌期在掉秤，先加 200-300 kcal 并保证蛋白。' });
+        else if(wt.change > 0.7) adv.push({ t:'warn', tag:'增重过快', text:'近7天 +'+wt.change+' kg 偏快（建议 0.25-0.5 kg/周），热量略降。' });
+        else adv.push({ t:'good', tag:'增重合理', text:'近7天体重 '+wt.change+' kg，处于增肌合理区间。' });
+      } else if(p.goal==='减脂'){
+        if(wt.change > -0.1) adv.push({ t:'warn', tag:'减脂停滞', text:'近7天体重变化 '+wt.change+' kg：先保持热量、把日均步数+2000，再观察一周。' });
+        else if(wt.change < -(wt.cur*0.012)) adv.push({ t:'bad', tag:'掉秤过快', text:'一周下降超过体重 1.2%，有掉肌肉风险；热量+150-200 kcal。' });
+        else adv.push({ t:'good', tag:'减脂合理', text:'近7天 -'+Math.abs(wt.change)+' kg，处于健康区间。' });
+      }
+    } else adv.push({ t:'info', tag:'体重趋势', text:'体重记录少于 2 次/跨周，暂无法判断趋势；建议每周固定 2-3 次晨起称重。' });
+    var targetDays=Math.max(2,+p.days||4);
+    if(t7.sessions < targetDays-1) adv.push({ t:'warn', tag:'训练频率', text:'本周已练 '+t7.sessions+' 次（目标 '+targetDays+' 次）：优先补上下一练，而不是加练时长。' });
+    else adv.push({ t:'good', tag:'训练频率', text:'本周已完成 '+t7.sessions+' 次训练，节奏不错。' });
+    ['推','拉','腿'].forEach(function(g){
+      var v=t7.grp[g];
+      if(t7.sessions>0 && v>0 && v<10) adv.push({ t:'warn', tag:g+'容量偏低', text:'本周'+g+' '+v+' 组（建议 10-20 组）：每个动作加 1 组或加 1 个动作。' });
+      else if(v>20) adv.push({ t:'warn', tag:g+'容量偏高', text:'本周'+g+' '+v+' 组超过 20 组：先减 2-3 组，观察恢复。' });
+    });
+    if(t7.avgStar && t7.avgStar<3) adv.push({ t:'warn', tag:'恢复不足', text:'近一周平均感受仅 '+t7.avgStar+' 星：安排 1 天完全休息或降量 30%，睡眠尽量 7h+。' });
+    var prog=progression().filter(function(x){ return x.prev; }).slice(0,4);
+    if(prog.length){
+      prog.forEach(function(x){
+        if(x.delta>0) adv.push({ t:'good', tag:'进步', text:x.name+'：估算力量较上次 +'+x.delta+'%，保持同样加量节奏。' });
+        else adv.push({ t:'info', tag:'下一步', text:x.name+'：上次 '+x.last.top+'，下次先加到 +2.5% 重量；做不到就同样重量多做 1 次。' });
+      });
+    } else if(t7.sessions>0) adv.push({ t:'info', tag:'进阶依据', text:'同一动作还没有两次可对比记录：先按上周重量×次数完成，下次再比较。' });
+    var order={ bad:0,warn:1,info:2,good:3 };
+    adv.sort(function(a,b){ return order[a.t]-order[b.t]; });
+    return adv.slice(0,8);
+  }
+  function genPlan(){
+    var p=cf(), days=Math.max(2,Math.min(6,+p.days||4));
+    var splits = days<=3 ? ['推','拉','腿'] : (days===4 ? ['推','拉','腿','上肢'] : (days===5 ? ['推','拉','腿','上肢','下肢'] : ['推','拉','腿','推','拉','腿']));
+    var reps = p.level==='新手' ? '3×8-12' : (p.level==='中级' ? '4×8-12' : '4-5×6-12');
+    var plan = splits.map(function(g, i){
+      var pool;
+      if(g==='上肢') pool = MOVEMENT_LIB['推'].slice(0,3).concat(MOVEMENT_LIB['拉'].slice(0,3));
+      else if(g==='下肢') pool = MOVEMENT_LIB['腿'].slice(0,6);
+      else pool = MOVEMENT_LIB[g].slice(0,5);
+      return { day:'第'+(i+1)+'练 · '+g, moves:pool.map(function(m){ return m.name+' '+reps; }) };
+    });
+    coachPlan = { goal:p.goal, level:p.level, days:days, equipment:p.equipment, created:today, plan:plan };
+    state.coach.plans = state.coach.plans || []; state.coach.plans.push(coachPlan);
+    if(state.coach.plans.length>5) state.coach.plans = state.coach.plans.slice(-5);
+    save(); renderCoach();
+  }
+  function renderCoach(){
+    var p=cf(), td=tdeeCalc(), d7=diet7(), t7=train7(), wt=weightTrend(), latest=latestMetric();
+    var metrics = cm();
+    var adv = buildAdvice();
+    var prog = progression();
+    var lastPlan = coachPlan || (state.coach.plans && state.coach.plans.length ? state.coach.plans[state.coach.plans.length-1] : null);
+    var lastM = Object.keys(metrics).sort().slice(-3).reverse();
+    var metricChips = lastM.map(function(d){ var m=metrics[d]; return '<div class="cm"><b>'+ (m.weight||'—') +' kg</b><span>'+fmtCN(d)+' · 体脂'+(m.bodyfat||'—')+'% · 腰'+(m.waist||'—')+'cm · 睡'+(m.sleep||'—')+'h · '+(m.readiness||'—')+'★</span></div>'; }).join('');
+
+    viewCoach.innerHTML = '<div id="coachBody"></div>';
+    $('coachBody').innerHTML =
+      '<div class="card fit-card"><h3>教练档案</h3>' +
+        '<div class="coach-grid">' +
+          '<select id="pSex"><option value="男"'+(p.sex==='男'?' selected':'')+'>男</option><option value="女"'+(p.sex==='女'?' selected':'')+'>女</option></select>' +
+          '<select id="pGoal"><option value="增肌"'+(p.goal==='增肌'?' selected':'')+'>增肌</option><option value="减脂"'+(p.goal==='减脂'?' selected':'')+'>减脂</option><option value="塑形"'+(p.goal==='塑形'?' selected':'')+'>塑形</option></select>' +
+          '<input id="pAge" type="number" min="12" max="80" value="'+(p.age||20)+'" placeholder="年龄">' +
+          '<input id="pHeight" type="number" min="120" max="220" value="'+(p.height||175)+'" placeholder="身高cm">' +
+          '<select id="pLevel"><option value="新手"'+(p.level==='新手'?' selected':'')+'>新手</option><option value="中级"'+(p.level==='中级'?' selected':'')+'>中级</option><option value="高级"'+(p.level==='高级'?' selected':'')+'>高级</option></select>' +
+          '<input id="pDays" type="number" min="2" max="6" value="'+(p.days||4)+'" placeholder="每周训练天数">' +
+          '<input id="pEquip" class="full" type="text" maxlength="30" value="'+esc(p.equipment||'健身房')+'" placeholder="器械条件，如：健身房/哑铃+单杠">' +
+        '</div>' +
+        '<button type="button" class="btn primary" data-act="saveProfile" style="width:100%;padding:10px 0;">保存档案</button>' +
+      '</div>' +
+      '<div class="card fit-card"><h3>今日身体记录</h3>' +
+        '<div class="coach-grid">' +
+          '<input id="mDate" type="date" value="'+today+'">' +
+          '<input id="mWeight" type="number" step="0.1" min="20" value="'+((latest?latest[1]:'')||'')+'" placeholder="体重 kg">' +
+          '<input id="mBf" type="number" step="0.1" min="0" placeholder="体脂 %（可选）">' +
+          '<input id="mWaist" type="number" step="0.1" min="30" placeholder="腰围 cm（可选）">' +
+          '<input id="mSleep" type="number" step="0.5" min="0" max="16" placeholder="睡眠 h（可选）">' +
+          '<select id="mReady"><option value="">状态（可选）</option><option value="5">5 ★ 极佳</option><option value="4">4 ★ 良好</option><option value="3">3 ★ 一般</option><option value="2">2 ★ 疲累</option><option value="1">1 ★ 很差</option></select>' +
+        '</div>' +
+        '<button type="button" class="btn primary" data-act="saveMetric" style="width:100%;padding:10px 0;">保存记录</button>' +
+        (metricChips ? '<div class="coach-metrics" style="margin-top:10px;">'+metricChips+'</div>' : '') +
+      '</div>' +
+      '<div class="card fit-card"><h3>教练分析</h3>' +
+        '<div class="coach-metrics">' +
+          '<div class="cm"><b>'+(wt&&wt.cur?wt.cur:'—')+' kg</b><span>7日均体重'+(wt&&wt.change!==null&&wt.change!==undefined?(' · 变化 '+wt.change+' kg'):'')+'</span></div>' +
+          '<div class="cm"><b>'+Math.round(d7.kcal||0)+' kcal</b><span>7日均热量 · 蛋白 '+Math.round(d7.protein||0)+'g</span></div>' +
+          '<div class="cm"><b>'+t7.sessions+' 次 / '+t7.sets+' 组</b><span>近7天训练</span></div>' +
+          '<div class="cm"><b>'+(t7.avgStar||'—')+' ★</b><span>平均训练感受</span></div>' +
+        '</div>' +
+        (td ? '<div style="font-size:12px;color:var(--ink-3);margin:2px 2px 8px;">估算目标：'+td.kcal+' kcal / 蛋白 '+td.protein+' g（'+p.goal+'）</div>' : '') +
+        '<ul class="advice-list">'+adv.map(function(a){ return '<li><span class="advice-tag '+a.t+'">'+a.tag+'</span><span>'+a.text+'</span></li>'; }).join('')+'</ul>' +
+      '</div>' +
+      '<div class="card fit-card"><h3>下一次训练建议</h3>' +
+        (prog.length ? '<ul class="advice-list">'+prog.map(function(x){ return '<li><span class="advice-tag info">'+esc(x.name)+'</span><span>上次 '+x.last.top+'（'+(x.prev?('较上次 '+x.delta+'%'):'首次记录')+'）→ '+(x.prev ? (x.delta>0?'保持加量，下次 +2.5% 或 +1 次':'先加到 +2.5% 重量，做不到就多加 1 次') : '按计划完成，下次再比较')+'</span></li>'; }).join('')+'</ul>' : '<div class="bj-empty">还没有训练记录：先完成一次，教练会自动给出下一次建议</div>') +
+      '</div>' +
+      '<div class="card fit-card"><h3>计划生成（'+p.goal+' · '+p.level+' · 每周'+p.days+'练）</h3>' +
+        '<div class="coach-grid"><input id="gEquip" class="full" type="text" value="'+esc(p.equipment||'健身房')+'" placeholder="器械条件（用于调整动作）">' +
+        '<select id="gGoal"><option value="增肌"'+(p.goal==='增肌'?' selected':'')+'>增肌</option><option value="减脂"'+(p.goal==='减脂'?' selected':'')+'>减脂</option><option value="塑形"'+(p.goal==='塑形'?' selected':'')+'>塑形</option></select>' +
+        '<select id="gDays">'+[3,4,5,6].map(function(d){ return '<option value="'+d+'"'+(+p.days===d?' selected':'')+'>每周 '+d+' 练</option>'; }).join('')+'</select></div>' +
+        '<button type="button" class="btn primary" data-act="genPlan" style="width:100%;padding:10px 0;">生成训练计划</button>' +
+        (lastPlan ? '<div style="margin-top:10px;">'+lastPlan.plan.map(function(x){ return '<div class="plan-day"><b>'+esc(x.day)+'</b>'+x.moves.map(function(mv){ return '<span>· '+esc(mv)+'</span>'; }).join('')+'</div>'; }).join('')+'</div>' : '') +
+      '</div>' +
+      '<div class="card fit-card"><h3>安全自查（不构成医疗建议）</h3>' +
+        '<div class="sym-row">' +
+          '<label><input type="checkbox" class="sym" value="chest"> 胸痛/胸闷</label>' +
+          '<label><input type="checkbox" class="sym" value="faint"> 晕厥/濒临晕厥</label>' +
+          '<label><input type="checkbox" class="sym" value="dizzy"> 严重头晕</label>' +
+          '<label><input type="checkbox" class="sym" value="radiat"> 疼痛放射/沿肢体串</label>' +
+          '<label><input type="checkbox" class="sym" value="numb"> 麻木/无力</label>' +
+        '</div>' +
+        '<button type="button" class="btn ghost" data-act="symCheck" style="width:100%;padding:9px 0;">自查</button>' +
+        '<div id="symResult" style="font-size:13px;color:var(--ink-2);margin-top:8px;"></div>' +
+      '</div>';
+  }
+  viewCoach.addEventListener('click', function(ev){
+    var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
+    if(!b) return;
+    var act = b.getAttribute('data-act');
+    if(act === 'saveProfile'){
+      var prof = cf();
+      prof.sex=$('pSex').value; prof.goal=$('pGoal').value; prof.age=+$('pAge').value||20; prof.height=+$('pHeight').value||175;
+      prof.level=$('pLevel').value; prof.days=Math.max(2,Math.min(6,+$('pDays').value||4)); prof.equipment=$('pEquip').value.trim()||'健身房';
+      save(); renderCoach();
+    } else if(act === 'saveMetric'){
+      var d=$('mDate').value||today, w=+$('mWeight').value||0;
+      var m=cm()[d]||{}; if(w) m.weight=w; if($('mBf').value) m.bodyfat=+$('mBf').value; if($('mWaist').value) m.waist=+$('mWaist').value; if($('mSleep').value) m.sleep=+$('mSleep').value; if($('mReady').value) m.readiness=+$('mReady').value;
+      cm()[d]=m; if(w){ state.weights=state.weights||{}; state.weights[d]=w; }
+      save(); renderCoach();
+    } else if(act === 'genPlan'){
+      var prof2=cf(); prof2.goal=$('gGoal').value; prof2.days=+$('gDays').value||prof2.days; prof2.equipment=$('gEquip').value.trim()||prof2.equipment;
+      save(); genPlan();
+    } else if(act === 'symCheck'){
+      var reds=[]; document.querySelectorAll('.sym:checked').forEach(function(x){ reds.push(x.value); });
+      var el=$('symResult');
+      if(reds.length){ el.innerHTML='<span style="color:var(--red);font-weight:700;">停止训练，尽快就医/急诊评估。</span> 出现胸痛、晕厥、严重头晕、放射痛或麻木无力时，不要继续训练，也不要自行诊断；请寻求专业医疗帮助。'; }
+      else { el.innerHTML='未勾选红旗症状。若某个动作引起尖锐/持续疼痛，请停止该动作并做专业评估；其余情况可按建议训练。'; }
     }
   });
 

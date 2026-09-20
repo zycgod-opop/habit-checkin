@@ -616,6 +616,18 @@
   .sym-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
   .sym-row label{font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:5px 8px;}
 
+
+  .chat-list{max-height:280px;overflow:auto;padding:4px 2px 8px;margin-bottom:8px;}
+  .chat-msg{display:flex;margin-bottom:8px;}
+  .chat-msg.user{justify-content:flex-end;}
+  .chat-bubble{max-width:82%;font-size:13.5px;line-height:1.65;padding:9px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;}
+  .chat-msg.coach .chat-bubble{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-top-left-radius:4px;}
+  .chat-msg.user .chat-bubble{background:var(--red);color:#fff;border-top-right-radius:4px;}
+  .chat-quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+  .chat-input{display:flex;gap:8px;}
+  .chat-input input{flex:1;border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;font-size:14px;background:#fff;color:var(--ink);outline:none;font-family:inherit;}
+  .chat-input input:focus{border-color:var(--red);}
+
 </style>
 </head>
 <body>
@@ -854,7 +866,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [] } }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [] } }; }
 
   function load(){
     try{
@@ -879,6 +891,7 @@
       raw.coach.profile = (raw.coach.profile && typeof raw.coach.profile === 'object') ? raw.coach.profile : { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' };
       raw.coach.metrics = (raw.coach.metrics && typeof raw.coach.metrics === 'object') ? raw.coach.metrics : {};
       raw.coach.plans = Array.isArray(raw.coach.plans) ? raw.coach.plans : [];
+      raw.coach.chat = Array.isArray(raw.coach.chat) ? raw.coach.chat.slice(-200) : [];
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1685,7 +1698,7 @@
           bullets: (data.bullets && typeof data.bullets === 'object') ? data.bullets : {},
           courses: Array.isArray(data.courses) ? data.courses : [],
           semester: (data.semester && typeof data.semester === 'object') ? { start: data.semester.start || '', weeks: +data.semester.weeks || 16, manualWeek: Math.max(0, +data.semester.manualWeek || 0) } : { start: '', weeks: 16, manualWeek: 0 },
-          coach: (data.coach && typeof data.coach === 'object') ? data.coach : { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [] }
+          coach: (data.coach && typeof data.coach === 'object') ? data.coach : { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [] }
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -3499,6 +3512,81 @@
     var wc = weightSeries().length;
     return { trainDays:trainDays, sets:sets, dietDays:dietDays, weights:wc, first:first };
   }
+  function coachGreeting(){
+    var hs = historyStats();
+    return '我是你的私人教练，已自动读取：训练 '+hs.trainDays+' 天 / 饮食 '+hs.dietDays+' 天 / 体重 '+hs.weights+' 条。可以问我：今天怎么练？蛋白还差多少？体重趋势？下周计划？';
+  }
+  function coachReply(q){
+    var td=tdeeCalc(), d7=diet7(), t7=train7(), wt=weightTrend(), hs=historyStats(), prog=progression();
+    var text=q.trim();
+    if(/胸痛|胸闷|晕厥|晕倒|严重头晕|麻木|无力|放射/.test(text)){
+      return '先停下训练，不要继续这组动作：你描述的情况属于需要重视的安全信号。请尽快就医或急诊评估，不要自行诊断或用训练硬扛。等专业人员确认没问题后，我们再安排恢复训练。';
+    }
+    if(/蛋白|蛋白质/.test(text)){
+      if(!td) return '先记录一次体重，我就能算出你的每日蛋白目标（一般 1.6-2.2 g/kg）。';
+      if(d7.days<1) return '近 7 天还没有饮食记录。你的蛋白目标约 '+td.protein+' g/天；先记录 1-2 天，我再帮你看差多少。';
+      var gap=Math.round(td.protein-d7.protein);
+      return gap>0
+        ? '近7天日均蛋白 '+Math.round(d7.protein)+' g，目标 '+td.protein+' g，还差约 '+gap+' g。最省事的补法：1 勺蛋白粉（约20-25g）+ 1 个鸡蛋（约6g）×2，或 200g 鸡胸（约49g）。'
+        : '近7天日均蛋白 '+Math.round(d7.protein)+' g，已达到目标 '+td.protein+' g，保持就行；把蛋白分散到 3-4 餐更好吸收。';
+    }
+    if(/热量|卡路里|吃|饮食|碳水|脂肪|纤维/.test(text)){
+      if(!td) return '先记录体重，我能给出热量目标；现在近7天日均约 '+Math.round(d7.kcal)+' kcal、蛋白 '+Math.round(d7.protein)+' g（记录 '+d7.days+' 天）。';
+      var diff=Math.round(td.kcal-d7.kcal);
+      return '你的估算目标：'+td.kcal+' kcal / 蛋白 '+td.protein+' g（'+cf().goal+'）。近7天实际：'+Math.round(d7.kcal)+' kcal、蛋白 '+Math.round(d7.protein)+' g、纤维 '+Math.round(d7.fiber)+' g（记录 '+d7.days+' 天）。'+
+        (Math.abs(diff)<150 ? '热量基本吻合，先保持一周观察体重。' : (diff>0 ? '比目标少约 '+diff+' kcal：加一份主食（米饭200g≈232kcal）或一杯牛奶。' : '比目标多约 '+Math.abs(diff)+' kcal：先减掉含糖饮料/零食。'))+
+        (/纤维/.test(text) ? ' 纤维目标建议 25-30g/天。' : '');
+    }
+    if(/体重|掉秤|增重|减脂|变胖|瘦/.test(text)){
+      if(!wt || wt.change===null) return '体重记录还不够做趋势（当前 '+(wt?wt.cur:'—')+' kg）。建议每周固定 2-3 次晨起称重，我就能算 7 日均值和周变化。';
+      var g=cf().goal;
+      return '7日均体重 '+wt.cur+' kg（上一周期 '+wt.prev+' kg，变化 '+wt.change+' kg）。目标：'+g+'。'+
+        (g==='增肌' ? (wt.change<0?'在掉秤：热量+200~300 kcal。':(wt.change>0.7?'增重偏快：热量略降，保持蛋白。':'增重在合理区间（0.25-0.5kg/周）。')) :
+         g==='减脂' ? (wt.change>-0.1?'进入平台：先加步数/有氧，不急着再砍热量。':(wt.change < -(wt.cur*0.012)?'掉秤偏快：热量+150~200 kcal，保住肌肉。':'减脂速度合理。')) : '塑形期体重变化不用太快，重点看围度和训练表现。');
+    }
+    if(/睡|恢复|累|疲劳|状态|酸痛/.test(text)){
+      return '近7天训练 '+t7.sessions+' 次、平均感受 '+(t7.avgStar||'—')+'★。'+
+        (t7.avgStar && t7.avgStar<3 ? '平均感受偏低：建议明天完全休息或降量30%，睡眠争取7小时以上，蛋白吃够再恢复训练。' : '恢复看起来还行：保持睡眠7h+、训练日之间不连续练同一部位。');
+    }
+    if(/计划|怎么练|安排|下周|课表|三联|三分/.test(text)){
+      var last = (state.coach.plans && state.coach.plans.length) ? state.coach.plans[state.coach.plans.length-1] : null;
+      if(last) return '你最近生成过「'+last.goal+' · 每周'+last.days+'练」计划：'+last.plan.map(function(x){ return x.day+'（'+x.moves.slice(0,3).join('、')+'…）'; }).join('；')+'。要我按最新状态重算，点下面「生成训练计划」。';
+      return '按你的目标（'+cf().goal+'）和每周 '+cf().days+' 练，建议经典推/拉/腿循环：推（胸肩三头）、拉（背二头）、腿（下肢核心）轮换，每个动作 '+(cf().level==='新手'?'3组×8-12次':'4组×8-12次')+'，组间 1.5-2 分钟。点下面「生成训练计划」可自动排好动作。';
+    }
+    if(/进步|加量|重量|卧推|深蹲|硬拉|划船|推|拉|腿|组/.test(text)){
+      var hit=null;
+      prog.forEach(function(x){ if(hit) return; if(text.indexOf(x.name)>=0) hit=x; });
+      if(hit) return hit.name+'：上次 '+hit.last.top+(hit.prev?('，估算力量较上次 '+hit.delta+'%'):'，首次记录')+'。下次：'+(hit.prev ? (hit.delta>0?'继续小步加量：+2.5% 重量；做不到就同重量+1次。':'先加 2.5% 重量；完不成同样重量多做1次，连续两次再加重。') : '先把动作做稳，记录同样重量次数，下次再比较。');
+      if(!prog.length) return '还没有训练记录：先记录一次动作的组数/重量/次数，我下次就能给加量建议。';
+      return '近期动作表现：'+prog.slice(0,3).map(function(x){ return x.name+' 上次'+x.last.top+(x.prev?('（'+(x.delta>=0?'+':'')+x.delta+'%）'):''); }).join('；')+'。想具体问某个动作，直接发动作名即可。';
+    }
+    if(/体脂|腰围|围度|体测|身体/.test(text)){
+      return '身体数据：体重 '+(wt?wt.cur:'—')+' kg'+(wt&&wt.change!==null?('（7日变化 '+wt.change+' kg）'):'')+'；历史记录 '+hs.weights+' 条。腰围/体脂在「今日身体记录」里填一次，我就能一起做趋势判断。';
+    }
+    if(/你好|帮助|能做什么|会什么|怎么用/.test(text)){
+      return '我能基于你自己的记录回答：①今天/本周怎么练 ②某个动作该不该加量 ③蛋白/热量/纤维差多少 ④体重趋势与减脂增肌速度 ⑤恢复与休息建议 ⑥生成推拉腿计划。涉及胸痛、晕厥、麻木等安全问题时，我会先让你就医，不做训练建议。';
+    }
+    return '先说结论：近7天训练 '+t7.sessions+' 次、饮食记录 '+d7.days+' 天、体重 '+(wt?wt.cur:'—')+' kg。你可以直接问我：「今天怎么练」「蛋白还差多少」「卧推要不要加量」「体重趋势怎么样」，我会用你的真实记录回答。';
+  }
+  function chatHtml(){
+    var msgs = (state.coach.chat || []).slice(-40);
+    return '<div class="chat-list" id="chatList">' +
+      '<div class="chat-msg coach"><div class="chat-bubble">'+esc(coachGreeting())+'</div></div>' +
+      msgs.map(function(m){
+        return '<div class="chat-msg '+(m.role==='user'?'user':'coach')+'"><div class="chat-bubble">'+esc(m.text)+'</div></div>';
+      }).join('') +
+    '</div>';
+  }
+  function sendChat(text){
+    var q=String(text||'').trim(); if(!q) return;
+    state.coach.chat = state.coach.chat || [];
+    state.coach.chat.push({ role:'user', text:q, ts:Date.now() });
+    state.coach.chat.push({ role:'coach', text:coachReply(q), ts:Date.now() });
+    if(state.coach.chat.length>200) state.coach.chat = state.coach.chat.slice(-200);
+    save(); renderCoach();
+    var cl=$('chatList'); if(cl) cl.scrollTop = cl.scrollHeight;
+  }
+
   function renderCoach(){
     var p=cf(), td=tdeeCalc(), d7=diet7(), t7=train7(), wt=weightTrend(), latest=latestMetric();
     var hs = historyStats();
@@ -3549,6 +3637,18 @@
         (td ? '<div style="font-size:12px;color:var(--ink-3);margin:2px 2px 8px;">估算目标：'+td.kcal+' kcal / 蛋白 '+td.protein+' g（'+p.goal+'）</div>' : '') +
         '<ul class="advice-list">'+adv.map(function(a){ return '<li><span class="advice-tag '+a.t+'">'+a.tag+'</span><span>'+a.text+'</span></li>'; }).join('')+'</ul>' +
       '</div>' +
+      '<div class="card fit-card"><h3>教练对话</h3>' +
+        chatHtml() +
+        '<div class="chat-quick">' +
+          '<button type="button" class="bj-chip" data-act="chatQuick" data-q="今天怎么练">今天怎么练</button>' +
+          '<button type="button" class="bj-chip" data-act="chatQuick" data-q="蛋白还差多少">蛋白还差多少</button>' +
+          '<button type="button" class="bj-chip" data-act="chatQuick" data-q="体重趋势怎么样">体重趋势</button>' +
+          '<button type="button" class="bj-chip" data-act="chatQuick" data-q="下周计划">下周计划</button>' +
+          '<button type="button" class="bj-chip" data-act="chatQuick" data-q="我最近很累">我最近很累</button>' +
+        '</div>' +
+        '<div class="chat-input"><input id="chatInput" type="text" maxlength="300" placeholder="问教练：今天怎么练 / 蛋白还差多少…"><button type="button" class="btn primary" data-act="chatSend" style="padding:9px 14px;">发送</button></div>' +
+        '<div style="text-align:right;margin-top:6px;"><button type="button" class="mnote-btn" data-act="chatClear">清空对话</button></div>' +
+      '</div>' +
       '<div class="card fit-card"><h3>下一次训练建议</h3>' +
         (prog.length ? '<ul class="advice-list">'+prog.map(function(x){ return '<li><span class="advice-tag info">'+esc(x.name)+'</span><span>上次 '+x.last.top+'（'+(x.prev?('较上次 '+x.delta+'%'):'首次记录')+'）→ '+(x.prev ? (x.delta>0?'保持加量，下次 +2.5% 或 +1 次':'先加到 +2.5% 重量，做不到就多加 1 次') : '按计划完成，下次再比较')+'</span></li>'; }).join('')+'</ul>' : '<div class="bj-empty">还没有训练记录：先完成一次，教练会自动给出下一次建议</div>') +
       '</div>' +
@@ -3571,10 +3671,16 @@
         '<div id="symResult" style="font-size:13px;color:var(--ink-2);margin-top:8px;"></div>' +
       '</div>';
   }
+  viewCoach.addEventListener('keydown', function(ev){
+    if(ev.key === 'Enter' && ev.target && ev.target.id === 'chatInput'){ ev.preventDefault(); sendChat(ev.target.value); }
+  });
   viewCoach.addEventListener('click', function(ev){
     var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
     if(!b) return;
     var act = b.getAttribute('data-act');
+    if(act === 'chatSend'){ var ci=$('chatInput'); sendChat(ci ? ci.value : ''); return; }
+    if(act === 'chatQuick'){ sendChat(b.getAttribute('data-q')); return; }
+    if(act === 'chatClear'){ if(window.confirm('清空与教练的对话记录？')){ state.coach.chat=[]; save(); renderCoach(); } return; }
     if(act === 'saveProfile'){
       var prof = cf();
       prof.sex=$('pSex').value; prof.goal=$('pGoal').value; prof.age=+$('pAge').value||20; prof.height=+$('pHeight').value||175;

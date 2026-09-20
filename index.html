@@ -634,7 +634,6 @@
         <button type="button" id="tabFitBtn" class="tab" role="tab" aria-selected="false">健身</button>
         <button type="button" id="tabJournalBtn" class="tab" role="tab" aria-selected="false">心得</button>
         <button type="button" id="tabCourseBtn" class="tab" role="tab" aria-selected="false">课程</button>
-        <button type="button" id="tabCoachBtn" class="tab" role="tab" aria-selected="false">教练</button>
       </nav>
     </header>
 
@@ -708,9 +707,11 @@
       <div class="fit-sub" role="tablist" aria-label="健身栏目">
         <button type="button" id="fitDietTab" class="fit-tab active" role="tab" aria-selected="true">饮食</button>
         <button type="button" id="fitTrainTab" class="fit-tab" role="tab" aria-selected="false">训练</button>
+        <button type="button" id="fitCoachTab" class="fit-tab" role="tab" aria-selected="false">教练</button>
       </div>
       <div id="fitDietView"></div>
       <div id="fitTrainView" hidden></div>
+      <div id="viewCoach" hidden><div id="coachBody"></div></div>
     </section>
 
     <!-- 心得·子弹笔记 -->
@@ -721,11 +722,6 @@
     <!-- 课程 -->
     <section id="viewCourses" hidden>
       <div id="courseBody"></div>
-    </section>
-
-    <!-- 私人教练 -->
-    <section id="viewCoach" hidden>
-      <div id="coachBody"></div>
     </section>
 
     <footer>
@@ -1201,9 +1197,9 @@
 
   // ---- 视图切换 ----
   function showView(name){
-    var views = { today: viewToday, stats: viewStats, fit: viewFit, journal: viewJournal, course: viewCourses, coach: viewCoach };
+    var views = { today: viewToday, stats: viewStats, fit: viewFit, journal: viewJournal, course: viewCourses };
     for(var k in views){ if(views[k]) views[k].hidden = (k !== name); }
-    var tabs = { today: tabTodayBtn, stats: tabStatsBtn, fit: tabFitBtn, journal: tabJournalBtn, course: tabCourseBtn, coach: tabCoachBtn };
+    var tabs = { today: tabTodayBtn, stats: tabStatsBtn, fit: tabFitBtn, journal: tabJournalBtn, course: tabCourseBtn };
     for(var k2 in tabs){
       if(!tabs[k2]) continue;
       var on = (k2 === name);
@@ -1214,7 +1210,6 @@
     else if(name === 'fit'){ fitRefreshAll(); }
     else if(name === 'journal'){ renderJournal(); }
     else if(name === 'course'){ renderCourses(); }
-    else if(name === 'coach'){ renderCoach(); }
     else { renderDate(); }
   }
 
@@ -1634,7 +1629,6 @@
   tabFitBtn.addEventListener('click', function(){ showView('fit'); });
   $('tabJournalBtn').addEventListener('click', function(){ showView('journal'); });
   $('tabCourseBtn').addEventListener('click', function(){ showView('course'); });
-  $('tabCoachBtn').addEventListener('click', function(){ showView('coach'); });
   $('prevMonthBtn').addEventListener('click', function(){ changeMonth(-1); });
   $('nextMonthBtn').addEventListener('click', function(){ changeMonth(1); });
   backTodayBtn.addEventListener('click', function(){
@@ -2365,15 +2359,19 @@
   function fitRefreshAll(){
     fitDietView.hidden = fitSub !== 'diet';
     fitTrainView.hidden = fitSub !== 'train';
+    viewCoach.hidden = fitSub !== 'coach';
     fitDietTab.classList.toggle('active', fitSub === 'diet');
     fitTrainTab.classList.toggle('active', fitSub === 'train');
+    $('fitCoachTab').classList.toggle('active', fitSub === 'coach');
     if(fitSub === 'diet') renderDiet();
-    else renderTrain();
+    else if(fitSub === 'train') renderTrain();
+    else renderCoach();
   }
 
   // ---- 健身视图事件（委托）----
   fitDietTab.addEventListener('click', function(){ fitSub = 'diet'; fitRefreshAll(); });
   fitTrainTab.addEventListener('click', function(){ fitSub = 'train'; fitRefreshAll(); });
+  $('fitCoachTab').addEventListener('click', function(){ fitSub = 'coach'; fitRefreshAll(); });
 
   fitDietView.addEventListener('click', function(ev){
     var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
@@ -3490,8 +3488,20 @@
     if(state.coach.plans.length>5) state.coach.plans = state.coach.plans.slice(-5);
     save(); renderCoach();
   }
+  function historyStats(){
+    var trainDays = 0, sets = 0, first = '';
+    Object.keys(state.workouts || {}).forEach(function(d){
+      var arr = state.workouts[d] || [];
+      if(arr.length){ trainDays++; arr.forEach(function(en){ sets += (en.sets ? en.sets.length : 0); }); if(!first || d < first) first = d; }
+    });
+    var dietDays = 0;
+    Object.keys(state.dietLog || {}).forEach(function(d){ if((state.dietLog[d]||[]).length){ dietDays++; if(!first || d < first) first = d; } });
+    var wc = weightSeries().length;
+    return { trainDays:trainDays, sets:sets, dietDays:dietDays, weights:wc, first:first };
+  }
   function renderCoach(){
     var p=cf(), td=tdeeCalc(), d7=diet7(), t7=train7(), wt=weightTrend(), latest=latestMetric();
+    var hs = historyStats();
     var metrics = cm();
     var adv = buildAdvice();
     var prog = progression();
@@ -3501,6 +3511,10 @@
 
     viewCoach.innerHTML = '<div id="coachBody"></div>';
     $('coachBody').innerHTML =
+      '<div class="card fit-card" style="padding:12px 16px;">' +
+        '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;">已自动读取历史数据</div>' +
+        '<div style="font-size:12.5px;color:var(--ink-2);line-height:1.8;">训练 '+hs.trainDays+' 天（共 '+hs.sets+' 组） · 饮食 '+hs.dietDays+' 天 · 体重 '+hs.weights+' 条' + (hs.first ? ' · 最早 '+hs.first : '') + '<br>教练分析直接使用这些历史记录，无需重新录入。</div>' +
+      '</div>' +
       '<div class="card fit-card"><h3>教练档案</h3>' +
         '<div class="coach-grid">' +
           '<select id="pSex"><option value="男"'+(p.sex==='男'?' selected':'')+'>男</option><option value="女"'+(p.sex==='女'?' selected':'')+'>女</option></select>' +

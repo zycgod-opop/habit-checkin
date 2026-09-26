@@ -698,6 +698,19 @@
   .rei-face-btn{border:1px solid var(--line-strong);background:var(--surface-2);color:var(--blue);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
   .rei-face-btn:hover{border-color:var(--blue);}
 
+
+  /* ===== 每日卡片 ===== */
+  .rei-daily{background:linear-gradient(165deg,#eaf5fb 0%,#cfe7f2 70%,#f6e6dc 100%);border:1px solid var(--line);border-radius:20px;padding:18px 18px 14px;text-align:center;margin-bottom:14px;box-shadow:var(--shadow-sm);}
+  .rei-daily-img{width:150px;height:150px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 6px 16px rgba(27,42,58,.16);background:#fff;}
+  .rei-daily-en{margin:14px auto 6px;max-width:340px;font-size:19px;line-height:1.45;font-weight:700;color:var(--ink);letter-spacing:.2px;font-family:Georgia,"Times New Roman",serif;}
+  .rei-daily-zh{font-size:13.5px;color:var(--ink-2);letter-spacing:.5px;}
+  .rei-daily-line{width:44px;height:2px;background:var(--red);opacity:.55;margin:12px auto;}
+  .rei-daily-date{font-size:12px;color:var(--ink-3);letter-spacing:.6px;}
+  .rei-daily-actions{display:flex;gap:8px;justify-content:center;margin-top:10px;}
+  .rei-daily-btn{border:1px solid var(--line-strong);background:rgba(255,255,255,.85);color:var(--blue);border-radius:999px;padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .rei-daily-btn:hover{border-color:var(--blue);color:var(--red);}
+  .rei-daily.fading .rei-daily-en,.rei-daily.fading .rei-daily-zh{opacity:.25;transition:opacity .25s ease;}
+
 </style>
 </head>
 <body>
@@ -726,6 +739,18 @@
       <div class="checkin-col">
         <div class="view-topbar">
           <p class="date" id="dateText"></p>
+      <section class="card rei-daily" id="reiDaily">
+        <img class="rei-daily-img" id="reiDailyImg" src="assets/rei-face-normal.png" alt="凌波丽">
+        <div class="rei-daily-en" id="reiDailyEn">I am not alone.</div>
+        <div class="rei-daily-zh" id="reiDailyZh">我不是一个人。</div>
+        <div class="rei-daily-line"></div>
+        <div class="rei-daily-date" id="reiDailyDate"></div>
+        <div class="rei-daily-actions">
+          <button type="button" class="rei-daily-btn" id="reiDailyRefresh">刷新卡片</button>
+          <button type="button" class="rei-daily-btn" id="reiDailySave">保存图片</button>
+        </div>
+      </section>
+
       <section class="card rei-face-card" id="reiFaceCard">
         <svg class="rei-face" id="reiFace" data-mood="normal" viewBox="0 0 600 600" aria-label="凌波丽大头照">
           <rect width="600" height="600" rx="150" fill="#EAF5FB"/>
@@ -4472,6 +4497,80 @@
   });
   apply(); setInterval(function(){ apply(); }, 20000);
   svg.addEventListener('click', function(){ var cur=svg.getAttribute('data-mood'); var i=(moodSeq.indexOf(cur)+1)%moodSeq.length; apply(moodSeq[i]); });
+})();
+</script>
+
+
+<script>
+(function(){
+  'use strict';
+  var QUOTES=[
+    {en:'I am not alone.',zh:'我不是一个人。',mood:'normal'},
+    {en:'I am myself.',zh:'我就是我。',mood:'stern'},
+    {en:"Don't run away.",zh:'不要逃避。',mood:'stern'},
+    {en:'The beginning is always today.',zh:'开始，永远从今天起。',mood:'happy'},
+    {en:'I will do what I can, here and now.',zh:'我做好此刻能做的事。',mood:'normal'},
+    {en:'Silence is also an answer.',zh:'沉默，也是一种回答。',mood:'normal'},
+    {en:'Keep your own pace.',zh:'按自己的步调前进。',mood:'tired'},
+    {en:'Even a small step is progress.',zh:'再小的一步也是前进。',mood:'happy'},
+    {en:'Pain is not the end.',zh:'痛苦不是终点。',mood:'normal'},
+    {en:'I choose to keep going.',zh:'我选择继续。',mood:'happy'},
+    {en:"Don't compare yourself to others.",zh:'不必和别人比较。',mood:'normal'},
+    {en:'Breathe, then begin.',zh:'深呼吸，然后开始。',mood:'tired'},
+    {en:"You don't have to be perfect.",zh:'不完美也可以。',mood:'happy'},
+    {en:'Tomorrow starts tonight.',zh:'明天，从今晚开始。',mood:'normal'}
+  ];
+  var card=document.getElementById('reiDaily'); if(!card) return;
+  var img=document.getElementById('reiDailyImg');
+  var en=document.getElementById('reiDailyEn');
+  var zh=document.getElementById('reiDailyZh');
+  var dateEl=document.getElementById('reiDailyDate');
+  var W=['日','一','二','三','四','五','六'];
+  function todayStr(){ var d=new Date(); var p=function(x){return (x<10?'0':'')+x;}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+  function dateText(){ var d=new Date(); return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · 星期'+W[d.getDay()]; }
+  function dailyIndex(){ var t=todayStr(), n=0; for(var i=0;i<t.length;i++) n=(n*31+t.charCodeAt(i))%100000; return n%QUOTES.length; }
+  var cur=dailyIndex();
+  function render(i,anim){
+    cur=((i%QUOTES.length)+QUOTES.length)%QUOTES.length;
+    var q=QUOTES[cur];
+    function set(){ en.textContent=q.en; zh.textContent=q.zh; img.src='assets/rei-face-'+q.mood+'.png'; }
+    if(anim){ card.classList.add('fading'); setTimeout(function(){ set(); card.classList.remove('fading'); },240); } else set();
+    dateEl.textContent=dateText();
+  }
+  document.getElementById('reiDailyRefresh').addEventListener('click', function(){
+    var n=cur; while(n===cur && QUOTES.length>1) n=Math.floor(Math.random()*QUOTES.length);
+    render(n,true);
+  });
+  document.getElementById('reiDailySave').addEventListener('click', function(){
+    var q=QUOTES[cur], W2=720, H2=1000;
+    var cv=document.createElement('canvas'); cv.width=W2; cv.height=H2;
+    var ctx=cv.getContext('2d');
+    var g=ctx.createLinearGradient(0,0,W2,H2); g.addColorStop(0,'#eaf5fb'); g.addColorStop(.7,'#cfe7f2'); g.addColorStop(1,'#f6e6dc');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W2,H2);
+    ctx.fillStyle='rgba(255,255,255,.72)'; ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(60,60,600,880,40); else ctx.rect(60,60,600,880); ctx.fill();
+    function wrapText(text,x,y,maxWidth,lineHeight,font){
+      ctx.font=font; var words=text.split(' '), line='', lines=[];
+      words.forEach(function(w){ var test=line?line+' '+w:w; if(ctx.measureText(test).width>maxWidth && line){ lines.push(line); line=w; } else line=test; });
+      if(line) lines.push(line);
+      lines.forEach(function(l,i){ ctx.fillText(l,x,y+i*lineHeight); });
+      return y+lines.length*lineHeight;
+    }
+    var image=new Image();
+    image.onload=function(){
+      ctx.save(); ctx.beginPath(); ctx.arc(360,250,130,0,Math.PI*2); ctx.clip(); ctx.drawImage(image,230,120,260,260); ctx.restore();
+      ctx.strokeStyle='#ffffff'; ctx.lineWidth=8; ctx.beginPath(); ctx.arc(360,250,130,0,Math.PI*2); ctx.stroke();
+      ctx.textAlign='center'; ctx.fillStyle='#14202e';
+      var y=wrapText(q.en,360,470,520,52,'bold 40px Georgia, "Times New Roman", serif');
+      ctx.font='24px "Microsoft YaHei", sans-serif'; ctx.fillStyle='#5a6b7d'; ctx.fillText(q.zh,360,y+20);
+      ctx.fillStyle='#E23A4E'; ctx.fillRect(330,y+70,60,4);
+      ctx.font='20px "Microsoft YaHei", sans-serif'; ctx.fillStyle='#93a6b6'; ctx.fillText(dateText(),360,y+120);
+      ctx.font='16px Arial'; ctx.fillStyle='#4E8FB5'; ctx.fillText('REI · DAILY CARD',360,900);
+      var a=document.createElement('a'); a.href=cv.toDataURL('image/png'); a.download='凌波丽每日卡片-'+todayStr()+'.png'; document.body.appendChild(a); a.click(); a.remove();
+    };
+    image.src=img.src;
+  });
+  render(cur,false);
 })();
 </script>
 

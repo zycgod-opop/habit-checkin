@@ -711,6 +711,14 @@
   .rei-daily-btn:hover{border-color:var(--blue);color:var(--red);}
   .rei-daily.fading .rei-daily-en,.rei-daily.fading .rei-daily-zh{opacity:.25;transition:opacity .25s ease;}
 
+
+  /* 自定义左上角头像 */
+  .brand{position:relative;}
+  .team-logo{cursor:pointer;}
+  .logo-reset{position:absolute;left:40px;top:36px;width:18px;height:18px;border-radius:50%;border:1px solid var(--line-strong);background:#fff;color:var(--ink-3);font-size:11px;line-height:1;cursor:pointer;display:none;z-index:3;padding:0;}
+  .logo-reset.show{display:block;}
+  .logo-reset:hover{color:var(--red);border-color:var(--red);}
+
 </style>
 </head>
 <body>
@@ -4574,8 +4582,57 @@
 })();
 </script>
 
+
+<script>
+(function(){
+  'use strict';
+  var KEY='habit-logo-photo-rei';
+  var img=document.getElementById('teamLogo'); if(!img) return;
+  var def=img.getAttribute('src');
+  var input=document.createElement('input');
+  input.type='file'; input.accept='image/*'; input.id='logoFileInput'; input.style.display='none';
+  document.body.appendChild(input);
+  var reset=document.createElement('button');
+  reset.type='button'; reset.className='logo-reset'; reset.id='logoReset'; reset.title='恢复默认图标'; reset.textContent='×';
+  img.parentNode.insertBefore(reset, img.nextSibling);
+  function apply(src){
+    if(src){ img.src=src; reset.classList.add('show'); }
+    else { img.src=def; reset.classList.remove('show'); }
+  }
+  img.title='点击更换为你的照片';
+  try{ var saved=localStorage.getItem(KEY); if(saved) apply(saved); }catch(e){}
+  img.addEventListener('click', function(){ input.click(); });
+  reset.addEventListener('click', function(ev){
+    ev.stopPropagation();
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    apply('');
+  });
+  input.addEventListener('change', function(){
+    var f=input.files && input.files[0]; if(!f) return;
+    var reader=new FileReader();
+    reader.onload=function(){
+      var im=new Image();
+      im.onload=function(){
+        var max=256, scale=Math.min(1, max/Math.max(im.width, im.height));
+        var w=Math.max(1,Math.round(im.width*scale)), h=Math.max(1,Math.round(im.height*scale));
+        var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        var ctx=cv.getContext('2d'); ctx.drawImage(im,0,0,w,h);
+        var data=cv.toDataURL('image/jpeg',0.85);
+        try{ localStorage.setItem(KEY,data); }catch(e){ alert('图片太大或浏览器存储受限，请换一张小一点的图片'); }
+        apply(data);
+      };
+      im.onerror=function(){ alert('这张图片无法读取，请换一张试试'); };
+      im.src=reader.result;
+    };
+    reader.readAsDataURL(f);
+    input.value='';
+  });
+})();
+</script>
+
 </body>
 </html>
+
 
 
 

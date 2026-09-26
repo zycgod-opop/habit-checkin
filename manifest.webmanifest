@@ -1,13 +1,13 @@
 {
-  "name": "今日打卡 · LA Clippers",
+  "name": "今日打卡 · 凌波丽",
   "short_name": "今日打卡",
-  "description": "简洁的每日习惯打卡与心得记录",
+  "description": "简洁的每日习惯打卡、心得、健身与课程记录",
   "lang": "zh-CN",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#eef1f6",
-  "theme_color": "#eef1f6",
+  "background_color": "#eef5f9",
+  "theme_color": "#eef5f9",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }

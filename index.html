@@ -646,6 +646,18 @@
   .kb-card ul{margin:0;padding-left:18px;}
   .kb-card li{font-size:12.5px;color:var(--ink-2);line-height:1.7;}
 
+
+  .bj-list li{flex-wrap:wrap;}
+  .delay{flex-basis:100%;margin:1px 0 0 26px;font-size:11px;color:var(--ink-3);}
+  .delay.s3{color:#b26a00;font-weight:600;}
+  .delay.s5{color:#d97706;font-weight:700;}
+  .delay.s7{color:var(--red);font-weight:800;animation:delayPulse 1.4s ease-in-out infinite;}
+  @keyframes delayPulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+
+
+  .chat-list{max-height:52vh;}
+  .chat-bubble.typing{color:var(--ink-3);font-style:italic;}
+
 </style>
 </head>
 <body>
@@ -782,12 +794,12 @@
         <h4>健身 · 饮食</h4>
         <div class="r-line">记录每天吃了什么：搜索或自建食物，按 <b>克 / 份 / 个（根片盒）</b> 记录；固定装产品用 ×1×2 按份加。自动累计热量、蛋白、碳水、脂肪、纤维，并可设每日目标、看 7 天图和体重。</div>
         <h4>健身 · 训练</h4>
-        <div class="r-line">按 <b>推 / 拉 / 腿</b> 三分化排周计划（数字 1-7 对应周一到周日）；勾选当天动作并记重量×次数；下方"训练心得"用罗马数字 I. II. III. 对应动作，可写单动作备注、打 1-5★，自动统计本周/本月/今年。</div>
+        <div class="r-line">按 <b>推 / 拉 / 腿</b> 排周计划（数字 1-7 对应周一到周日），每天的组别可自由改成 推/拉/腿/休/自由，不绑定固定天数；勾选当天动作并记重量×次数；下方"训练心得"用罗马数字 I. II. III. 对应动作，可写单动作备注、打 1-5★，自动统计本周/本月/今年。</div>
         <h4>健身 · 教练</h4>
         <div class="r-line"><b>教练档案</b>=目标/身高体重等，用来估算热量与蛋白；<b>身体记录</b>=体重/体脂/腰围/睡眠/状态；<b>教练分析</b>=根据历史记录给结论；<b>教练对话</b>=直接问问题；<b>下一次训练建议</b>=具体加量方案；<b>计划生成</b>=自动排推拉腿计划；<b>安全自查</b>=红旗症状提示就医。</div>
         <div class="r-line">教练会自动读取以前的训练、饮食、体重记录，不需要重新录入。</div>
         <h4>心得（子弹笔记）</h4>
-        <div class="r-line">每日快速记录：<b>• 任务</b>（完成点圆圈变 X 划掉）、<b>○ 事件</b>、<b>– 笔记</b>；<b>&lt;</b>=排程到未来，<b>&gt;</b>=从过去迁移而来；含月度日历与未来日志。</div>
+        <div class="r-line">每日快速记录：<b>• 任务</b>（完成点圆圈变 X 划掉）、<b>○ 事件</b>、<b>– 笔记</b>；<b>&lt;</b>=排程到未来，<b>&gt;</b>=从过去迁移而来；未完成的任务会显示已拖延天数，3/5/7 天逐级加重提醒；含月度日历与未来日志。</div>
         <h4>课程</h4>
         <div class="r-line">录入学期的课：填开始周/结束周与单双周；在"学期设置"填开学第一周周一日期后自动算本周第几周（也可手动调节）；今日课程只显示本周该上的课，周课表里本周不上的会变淡。</div>
         <h4>数据与安全</h4>
@@ -915,7 +927,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] } }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] }, trainSchedule: {} }; }
 
   function load(){
     try{
@@ -942,6 +954,7 @@
       raw.coach.plans = Array.isArray(raw.coach.plans) ? raw.coach.plans : [];
       raw.coach.chat = Array.isArray(raw.coach.chat) ? raw.coach.chat.slice(-200) : [];
       raw.coach.kb = Array.isArray(raw.coach.kb) ? raw.coach.kb : [];
+      raw.trainSchedule = (raw.trainSchedule && typeof raw.trainSchedule === 'object') ? raw.trainSchedule : {};
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1762,7 +1775,8 @@
           bullets: (data.bullets && typeof data.bullets === 'object') ? data.bullets : {},
           courses: Array.isArray(data.courses) ? data.courses : [],
           semester: (data.semester && typeof data.semester === 'object') ? { start: data.semester.start || '', weeks: +data.semester.weeks || 16, manualWeek: Math.max(0, +data.semester.manualWeek || 0) } : { start: '', weeks: 16, manualWeek: 0 },
-          coach: (data.coach && typeof data.coach === 'object') ? data.coach : { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] }
+          coach: (data.coach && typeof data.coach === 'object') ? data.coach : { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] },
+          trainSchedule: (data.trainSchedule && typeof data.trainSchedule === 'object') ? data.trainSchedule : {}
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -2262,11 +2276,13 @@
   [['推',PUSH],['拉',PULL],['腿',LEGS]].forEach(function(gr){
     MOVEMENT_LIB[gr[0]] = gr[1].map(function(nm, i){ return { id: 'm-' + gr[0] + i, name: nm, group: gr[0] }; });
   });
-  var WEEK_GROUP = ['推','拉','腿','推','拉','腿','休'];
+  var WEEK_GROUP = ['推','拉','腿','休','推','拉','休'];
 
   function dayGroupDef(dateStrVal){
     var d = new Date(+dateStrVal.slice(0,4), +dateStrVal.slice(5,7)-1, +dateStrVal.slice(8,10));
-    var idx = (d.getDay() + 6) % 7;
+    var idx = (d.getDay() + 6) % 7; // 0=周一
+    var sch = state.trainSchedule || {};
+    if(sch[idx+1]) return sch[idx+1];
     return WEEK_GROUP[idx];
   }
   function groupOf(dateStrVal){
@@ -2363,6 +2379,8 @@
     var movePanel = '';
     if(grp === '休'){
       movePanel = '<div class="jrn-empty">今天是休息日，好好恢复 💤</div>';
+    }else if(grp === '自由'){
+      movePanel = '<div class="jrn-empty">这天设为「自由」：点上面 推 / 拉 / 腿 任选今天练的，再记录动作。</div>';
     }else{
       var moves = movementsFor(grp);
       movePanel = '<ul class="move-list">' + moves.map(function(mv){
@@ -2410,7 +2428,14 @@
     var mPref = fitSelDate.slice(0,7), yPref = fitSelDate.slice(0,4);
     var wk = periodStats(pFrom, pTo), mo = periodStats(mPref + '-01', mPref + '-31'), yr = periodStats(yPref + '-01-01', yPref + '-12-31');
 
-    fitTrainView.innerHTML =
+    var schEditor = '<div class="card fit-card"><h3>本周训练安排（可自由改）</h3><div style="font-size:12px;color:var(--ink-3);margin:-6px 2px 8px;">每天可任选 推 / 拉 / 腿 / 休 / 自由；改完立即生效，不绑定固定天数。</div>' +
+      CDAYS.map(function(nm, i){
+        var g = dayGroupDef(dates[i]);
+        return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="width:42px;font-size:12.5px;color:var(--ink-2);">'+nm+'</span>' +
+          '<select data-act="schDay" data-day="'+(i+1)+'" style="flex:1;border:1px solid var(--line-strong);border-radius:8px;padding:6px 8px;font-size:13px;background:#fff;color:var(--ink);font-family:inherit;">' +
+          ['推','拉','腿','休','自由'].map(function(x){ return '<option value="'+x+'"'+(g===x?' selected':'')+'>'+x+'</option>'; }).join('') + '</select></div>';
+      }).join('') + '</div>';
+    fitTrainView.innerHTML = schEditor +
       '<div class="card fit-card">' +
         '<div class="wk-nav"><button type="button" class="wk-arrow" data-act="wkNav" data-d="-7">‹</button>' +
         '<span class="wk-label">本周（周一起）</span><button type="button" class="wk-arrow" data-act="wkNav" data-d="7">›</button></div>' +
@@ -2612,11 +2637,20 @@
     save(); renderDiet();
   });
 
+  fitTrainView.addEventListener('change', function(ev){
+    var t = ev.target;
+    if(t && t.getAttribute && t.getAttribute('data-act') === 'schDay'){
+      state.trainSchedule = state.trainSchedule || {};
+      state.trainSchedule[+t.getAttribute('data-day')] = t.value;
+      save(); renderTrain();
+    }
+  });
   fitTrainView.addEventListener('click', function(ev){
     var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
     if(!b) return;
     var act = b.getAttribute('data-act');
     if(act === 'dayCell'){ fitSelDate = b.getAttribute('data-date'); renderTrain(); }
+
     else if(act === 'wkNav'){
       var d = +b.getAttribute('data-d');
       var nd = addDaysStr(fitSelDate, d);
@@ -3096,6 +3130,7 @@
         if(seen[key]){ changed = true; return; }
         seen[key] = 1;
         if(!b.id){ b.id = 'legacy:' + key; changed = true; }
+        if(!b.created){ b.created = k; changed = true; }
         out.push(b);
       });
       if(out.length !== arr.length) changed = true;
@@ -3106,6 +3141,15 @@
   }
   function normalizeBullets(){
     if(dedupeBulletsData(state.bullets)) save();
+  }
+  function findBullet(ds, id){ var arr=state.bullets[ds]||[]; for(var i=0;i<arr.length;i++){ if(arr[i].id===id) return i; } return -1; }
+  function delayInfo(b, ds){
+    if(b.t!=='task' || b.done) return null;
+    var dd=Math.round((Date.parse(today)-Date.parse(b.created||ds))/86400000);
+    if(dd<=0) return null;
+    var cls=dd>=7?'s7':(dd>=5?'s5':(dd>=3?'s3':''));
+    var txt=dd>=7?('拖了 '+dd+' 天！今天必须做，或者直接删掉/改小'):(dd>=5?('已拖 '+dd+' 天 · 拆成最小一步，现在就做 5 分钟'):(dd>=3?('已拖 '+dd+' 天 · 别再拖了，先做 5 分钟'):('已拖延 '+dd+' 天')));
+    return { days:dd, cls:cls, text:txt };
   }
   function renderJournal(){
     normalizeBullets();
@@ -3126,9 +3170,21 @@
           ? '<button type="button" class="bj-mini" data-act="moveT" data-i="' + i + '" title="迁移到明天">→明日</button>' +
             '<button type="button" class="bj-mini" data-act="futureT" data-i="' + i + '" title="排程到指定日期（写入未来日志）">→未来</button>'
           : '';
+        var delayHtml = '';
+        if(b.t === 'task' && !b.done){
+          var cd = b.created || ds;
+          var dd = Math.round((Date.parse(today) - Date.parse(cd)) / 86400000);
+          if(dd > 0){
+            var dcls = dd >= 7 ? 's7' : (dd >= 5 ? 's5' : (dd >= 3 ? 's3' : ''));
+            var dtxt = dd >= 7 ? ('拖了 ' + dd + ' 天！今天必须做，或者直接删掉/改小') :
+                       (dd >= 5 ? ('已拖 ' + dd + ' 天 · 拆成最小一步，现在就做 5 分钟') :
+                       (dd >= 3 ? ('已拖 ' + dd + ' 天 · 别再拖了，先做 5 分钟') : ('已拖延 ' + dd + ' 天')));
+            delayHtml = '<span class="delay ' + dcls + '">' + dtxt + '</span>';
+          }
+        }
         rows.push('<li>' + sym + cb +
           '<span class="bj-text' + (b.done ? ' done' : '') + '">' + esc(b.text) + '</span>' +
-          move +
+          move + delayHtml +
           '<button type="button" class="bj-mini bj-del" data-act="delB" data-i="' + i + '">×</button></li>');
       });
     }
@@ -3137,6 +3193,24 @@
     var oldBlock = (oldJ && oldJ.trim())
       ? '<details style="margin-top:10px;"><summary style="font-size:12px;color:var(--ink-3);cursor:pointer;">旧版每日心得（'+fmtCN(ds)+'）</summary><p style="white-space:pre-wrap;font-size:13px;color:var(--ink-2);line-height:1.7;margin:6px 0 0;">'+esc(oldJ)+'</p></details>'
       : '';
+
+    // overdue tasks
+    var ov=[];
+    Object.keys(state.bullets).forEach(function(k){
+      if(k >= today) return;
+      (state.bullets[k]||[]).forEach(function(b){
+        var di=delayInfo(b,k); if(di) ov.push({ ds:k, b:b, info:di });
+      });
+    });
+    ov.sort(function(a,b2){ return b2.info.days - a.info.days; });
+    var overdueHtml = ov.length ? ('<div class="card fit-card"><h3>逾期未完成（'+ov.length+'）</h3><div style="font-size:12px;color:var(--ink-3);margin:-6px 2px 8px;">从写下那天算起，越拖越明显：3 天提醒、5 天催办、7 天严重警告。</div><ul class="bj-list">' +
+      ov.map(function(o){
+        return '<li><span class="bj-sym task">•</span><span class="bj-text">'+esc(o.b.text)+'</span>' +
+          '<button type="button" class="bj-mini" data-act="taskTogOV" data-date="'+o.ds+'" data-id="'+o.b.id+'">完成</button>' +
+          '<button type="button" class="bj-mini" data-act="moveTOV" data-date="'+o.ds+'" data-id="'+o.b.id+'">→今天</button>' +
+          '<button type="button" class="bj-mini bj-del" data-act="delOV" data-date="'+o.ds+'" data-id="'+o.b.id+'">×</button>' +
+          '<span class="delay ' + o.info.cls + '">'+o.info.text+'</span></li>';
+      }).join('') + '</ul></div>') : '';
 
     // month calendar
     var y = +ds.slice(0,4), m = +ds.slice(5,7)-1, dim = jMonthDays(y, m);
@@ -3189,6 +3263,7 @@
         '<div class="bj-key">• 任务（完成→点圆圈变 X 划掉） · ○ 事件 · – 笔记 · 任务可「→明日」迁移 · 数字为当天未完成条数</div>' +
         '<ul class="bj-list">' + rows.join('') + '</ul>' + oldBlock +
       '</div>' +
+      overdueHtml +
       '<div class="card fit-card">' +
         '<div class="bj-month-nav"><button type="button" class="bj-day-cell" data-act="monNav" data-d="-1">‹ 上月</button>' +
         '<b style="font-size:14px;">' + jMonthLabel(ds) + '</b>' +
@@ -3202,7 +3277,7 @@
     var inp = $('bjInput'); if(!inp) return;
     var t = inp.value.trim(); if(!t) return;
     state.bullets[ds] = state.bullets[ds] || [];
-    state.bullets[ds].push({ id: 'b' + Date.now() + Math.random().toString(36).slice(2,7), t: jType, done: false, text: t });
+    state.bullets[ds].push({ id: 'b' + Date.now() + Math.random().toString(36).slice(2,7), t: jType, done: false, text: t, created: ds });
     bjSave(); renderJournal();
   }
   function moveTomorrow(idx){
@@ -3241,6 +3316,18 @@
       if(arr2 && arr2[i2]){ arr2.splice(i2,1); bjSave(); renderJournal(); }
     }
     else if(act === 'moveT'){ moveTomorrow(+b.getAttribute('data-i')); }
+    else if(act === 'taskTogOV' || act === 'delOV' || act === 'moveTOV'){
+      var ods=b.getAttribute('data-date'), oid=b.getAttribute('data-id');
+      var idx2=findBullet(ods, oid);
+      if(idx2>=0){
+        var arrOV=state.bullets[ods];
+        if(act==='taskTogOV'){ arrOV[idx2].done=!arrOV[idx2].done; }
+        else if(act==='delOV'){ arrOV.splice(idx2,1); }
+        else { var mv=arrOV.splice(idx2,1)[0]; state.bullets[today]=state.bullets[today]||[]; state.bullets[today].push(mv); }
+        if(!arrOV.length) delete state.bullets[ods];
+        save(); renderJournal();
+      }
+    }
     else if(act === 'futureT'){
       var fi = +b.getAttribute('data-i');
       var fd = window.prompt('排程到哪一天？格式 2026-09-20', addDaysStr(today, 1));
@@ -3571,7 +3658,17 @@
     return adv.slice(0,8);
   }
   function genPlan(){
-    var p=cf(), days=Math.max(2,Math.min(6,+p.days||4));
+    var p=cf();
+    if(String(p.days)==='free'){
+      var pool3 = ['推','拉','腿'].map(function(g){
+        return { day:g+'（自由安排 · 哪天练自己定）', moves:MOVEMENT_LIB[g].slice(0,5).map(function(m){ return m.name + (p.level==='新手'?' 3×8-12':(p.level==='中级'?' 4×8-12':' 4-5×6-12')); }) };
+      });
+      coachPlan = { goal:p.goal, level:p.level, days:'free', equipment:p.equipment, created:today, plan:pool3 };
+      state.coach.plans = state.coach.plans || []; state.coach.plans.push(coachPlan);
+      if(state.coach.plans.length>5) state.coach.plans = state.coach.plans.slice(-5);
+      save(); renderCoach(); return;
+    }
+    var days=Math.max(2,Math.min(6,+p.days||4));
     var splits = days<=3 ? ['推','拉','腿'] : (days===4 ? ['推','拉','腿','上肢'] : (days===5 ? ['推','拉','腿','上肢','下肢'] : ['推','拉','腿','推','拉','腿']));
     var reps = p.level==='新手' ? '3×8-12' : (p.level==='中级' ? '4×8-12' : '4-5×6-12');
     var plan = splits.map(function(g, i){
@@ -3670,6 +3767,29 @@
     return '我是你的私人教练，已自动读取：训练 '+hs.trainDays+' 天 / 饮食 '+hs.dietDays+' 天 / 体重 '+hs.weights+' 条。可以问我：今天怎么练？蛋白还差多少？体重趋势？下周计划？';
   }
   function coachReply(q, skipKb){
+    var text = String(q || '').trim();
+    var follow = /(为什么|怎么弄|具体|然后呢|还有呢|那我|展开|继续说|咋办|怎么办)/.test(text) && text.length <= 14;
+    var trigger = { protein:'蛋白', calories:'热量', fatloss:'体重', bulk:'体重', training:'怎么练', recovery:'恢复', weighin:'体重', mealplan:'饮食' };
+    if(follow && state.coach.lastTopic && trigger[state.coach.lastTopic]) text = trigger[state.coach.lastTopic];
+    var ans = coachReplyCore(text, skipKb);
+    var topic = (typeof kbTopicOf === 'function') ? kbTopicOf(text) : 'general';
+    if(topic === 'general') topic = state.coach.lastTopic || 'general';
+    state.coach.lastTopic = topic;
+    var fu = {
+      protein:'要不要我按食堂/外卖帮你把蛋白分到 3 餐？',
+      calories:'你主要在食堂吃还是点外卖？我可以按场景给你一份选择清单。',
+      fatloss:'接下来一周你想先调饮食还是先加有氧？选一个就好。',
+      bulk:'你更想先加哪一餐？我帮你把热量补上但不增加太多脂肪。',
+      training:'告诉我你下次哪天练、练哪个组，我直接给你当天动作和重量。',
+      recovery:'你昨晚睡了几个小时？告诉我我就知道该不该降量。',
+      weighin:'你一般什么时候称重？固定条件后趋势会准很多。',
+      mealplan:'你平时几点吃饭？我可以按你的作息排加餐。'
+    }[topic];
+    if(fu && ans.indexOf('就医') < 0 && ans.indexOf('停下训练') < 0) ans += ' ' + fu;
+    try{ save(); }catch(e){}
+    return ans;
+  }
+  function coachReplyCore(q, skipKb){
     var td=tdeeCalc(), d7=diet7(), t7=train7(), wt=weightTrend(), hs=historyStats(), prog=progression();
     var text=q.trim();
     if(!skipKb){
@@ -3678,7 +3798,7 @@
         var kbTxt='参考你的知识卡：\n'+hits.slice(0,2).map(function(c){
           return '《'+(c.title||'未命名')+'》'+(c.author?(' · '+c.author):'')+(c.platform?(' · '+c.platform):'')+'\n'+(c.points||[]).slice(0,5).map(function(p){ return '· '+p; }).join('\n');
         }).join('\n');
-        return kbTxt+'\n\n（以上是参考观点，不是医疗建议）\n\n'+coachReply(q, true);
+        return kbTxt+'\n\n（以上是参考观点，不是医疗建议）\n\n'+coachReplyCore(q, true);
       }
     }
     if(/胸痛|胸闷|晕厥|晕倒|严重头晕|麻木|无力|放射/.test(text)){
@@ -3748,10 +3868,15 @@
     var q=String(text||'').trim(); if(!q) return;
     state.coach.chat = state.coach.chat || [];
     state.coach.chat.push({ role:'user', text:q, ts:Date.now() });
-    state.coach.chat.push({ role:'coach', text:coachReply(q), ts:Date.now() });
-    if(state.coach.chat.length>200) state.coach.chat = state.coach.chat.slice(-200);
     save(); renderCoach();
-    var cl=$('chatList'); if(cl) cl.scrollTop = cl.scrollHeight;
+    var cl=$('chatList');
+    if(cl){ cl.insertAdjacentHTML('beforeend','<div class="chat-msg coach" id="typingMsg"><div class="chat-bubble typing">教练正在整理你的数据…</div></div>'); cl.scrollTop = cl.scrollHeight; }
+    setTimeout(function(){
+      state.coach.chat.push({ role:'coach', text:coachReply(q), ts:Date.now() });
+      if(state.coach.chat.length>200) state.coach.chat = state.coach.chat.slice(-200);
+      save(); renderCoach();
+      var cl2=$('chatList'); if(cl2) cl2.scrollTop = cl2.scrollHeight;
+    }, 480);
   }
 
   function renderCoach(){
@@ -3851,7 +3976,7 @@
       '<div class="card fit-card"><h3>计划生成（'+p.goal+' · '+p.level+' · 每周'+p.days+'练）</h3>' +
         '<div class="coach-grid"><input id="gEquip" class="full" type="text" value="'+esc(p.equipment||'健身房')+'" placeholder="器械条件（用于调整动作）">' +
         '<select id="gGoal"><option value="增肌"'+(p.goal==='增肌'?' selected':'')+'>增肌</option><option value="减脂"'+(p.goal==='减脂'?' selected':'')+'>减脂</option><option value="塑形"'+(p.goal==='塑形'?' selected':'')+'>塑形</option></select>' +
-        '<select id="gDays">'+[3,4,5,6].map(function(d){ return '<option value="'+d+'"'+(+p.days===d?' selected':'')+'>每周 '+d+' 练</option>'; }).join('')+'</select></div>' +
+        '<select id="gDays">'+[3,4,5,6].map(function(d){ return '<option value="'+d+'"'+(+p.days===d?' selected':'')+'>每周 '+d+' 练</option>'; }).join('')+'<option value="free"'+(String(p.days)==='free'?' selected':'')+'>自由日程（不绑定天数）</option></select></div>' +
         '<button type="button" class="btn primary" data-act="genPlan" style="width:100%;padding:10px 0;">生成训练计划</button>' +
         (lastPlan ? '<div style="margin-top:10px;">'+lastPlan.plan.map(function(x){ return '<div class="plan-day"><b>'+esc(x.day)+'</b>'+x.moves.map(function(mv){ return '<span>· '+esc(mv)+'</span>'; }).join('')+'</div>'; }).join('')+'</div>' : '') +
       '</div>' +
@@ -3883,6 +4008,14 @@
         '<button type="button" class="btn ghost" data-act="symCheck" style="width:100%;padding:9px 0;">自查</button>' +
         '<div id="symResult" style="font-size:13px;color:var(--ink-2);margin-top:8px;"></div>' +
       '</div>';
+    var cb = $('coachBody');
+    if(cb){
+      var cards = cb.children;
+      for(var ci=0; ci<cards.length; ci++){
+        var h3 = cards[ci].querySelector && cards[ci].querySelector('h3');
+        if(h3 && h3.textContent === '教练对话'){ cb.insertBefore(cards[ci], cb.children[1] || null); break; }
+      }
+    }
   }
   viewCoach.addEventListener('keydown', function(ev){
     if(ev.key === 'Enter' && ev.target && ev.target.id === 'chatInput'){ ev.preventDefault(); sendChat(ev.target.value); }
@@ -3928,7 +4061,7 @@
       cm()[d]=m; if(w){ state.weights=state.weights||{}; state.weights[d]=w; }
       save(); renderCoach();
     } else if(act === 'genPlan'){
-      var prof2=cf(); prof2.goal=$('gGoal').value; prof2.days=+$('gDays').value||prof2.days; prof2.equipment=$('gEquip').value.trim()||prof2.equipment;
+      var prof2=cf(); prof2.goal=$('gGoal').value; var gdSel=$('gDays').value; prof2.days=(gdSel==='free')?'free':(+gdSel||prof2.days); prof2.equipment=$('gEquip').value.trim()||prof2.equipment;
       save(); genPlan();
     } else if(act === 'symCheck'){
       var reds=[]; document.querySelectorAll('.sym:checked').forEach(function(x){ reds.push(x.value); });

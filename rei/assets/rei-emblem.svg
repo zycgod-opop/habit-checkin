@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EAF5FB"/>
+      <stop offset="1" stop-color="#C7E3F0"/>
+    </linearGradient>
+  </defs>
+  <rect x="14" y="14" width="372" height="372" rx="96" fill="url(#bg)" stroke="#1B2A3A" stroke-width="8"/>
+  <circle cx="200" cy="198" r="138" fill="#FFFFFF" opacity=".68"/>
+  <path d="M62 258 L338 148" stroke="#9CCBE0" stroke-width="6" opacity=".45"/>
+  <path d="M62 148 L338 258" stroke="#9CCBE0" stroke-width="6" opacity=".25"/>
+  <path d="M108 352 C118 296 156 278 200 278 C244 278 282 296 292 352 Z" fill="#FFFFFF" stroke="#1B2A3A" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M168 288 L200 322 L232 288" fill="none" stroke="#E8752A" stroke-width="10" stroke-linecap="round"/>
+  <rect x="187" y="316" width="26" height="26" rx="7" fill="#1B2A3A"/>
+  <rect x="176" y="250" width="48" height="42" rx="14" fill="#F3DCD2" stroke="#1B2A3A" stroke-width="6"/>
+  <path d="M92 192 C92 106 140 64 200 64 C260 64 308 106 308 192 C308 234 298 264 280 284 L262 228 L250 294 L200 268 L150 294 L138 228 L120 284 C102 264 92 234 92 192 Z" fill="#A9D6EA" stroke="#1B2A3A" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M128 178 C128 232 158 270 200 270 C242 270 272 232 272 178 C272 130 240 106 200 106 C160 106 128 130 128 178 Z" fill="#F7E4DB" stroke="#1B2A3A" stroke-width="8"/>
+  <path d="M124 178 C130 118 160 92 200 92 C240 92 270 118 276 178 L252 158 L238 188 L214 150 L196 186 L172 148 L150 186 L128 160 Z" fill="#A9D6EA" stroke="#1B2A3A" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M149 197 C159 184 178 184 188 197 C178 209 159 209 149 197 Z" fill="#FFFFFF" stroke="#1B2A3A" stroke-width="6"/>
+  <path d="M212 197 C222 184 241 184 251 197 C241 209 222 209 212 197 Z" fill="#FFFFFF" stroke="#1B2A3A" stroke-width="6"/>
+  <circle cx="168" cy="197" r="9" fill="#E23A4E"/>
+  <circle cx="232" cy="197" r="9" fill="#E23A4E"/>
+  <path d="M192 233 Q200 239 208 233" stroke="#1B2A3A" stroke-width="5" fill="none" stroke-linecap="round"/>
+</svg>

@@ -56,3 +56,7 @@
 - **AI 教练（可选）**：健身 → 教练 → AI 教练，填入 OpenAI 兼容 Base/模型/Key 并启用；Key 只存本机 localStorage，不随导出/仓库；本地服务通过 /api/ai 代理调用；失败自动回退本地规则教练。
 
 
+
+## 下载安装包（APK）
+- 快船主版（v4）：https://github.com/zycgod-opop/habit-checkin/releases/download/android-v4-clippers/habit-checkin-clippers-v4.apk
+- 凌波丽版（v3，含桌宠）：https://github.com/zycgod-opop/habit-checkin/releases/download/android-v3-rei/habit-checkin-rei-v3.apk

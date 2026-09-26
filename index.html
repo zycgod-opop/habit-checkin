@@ -658,6 +658,9 @@
   .chat-list{max-height:52vh;}
   .chat-bubble.typing{color:var(--ink-3);font-style:italic;}
 
+
+  .reminder-toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:80;background:var(--surface);border:1px solid var(--line-strong);border-left:4px solid var(--red);border-radius:12px;box-shadow:0 10px 30px rgba(16,24,40,.16);padding:12px 16px;max-width:420px;width:calc(100% - 32px);cursor:pointer;}
+
 </style>
 </head>
 <body>
@@ -713,6 +716,21 @@
         </form>
         <div class="hint" id="hint"></div>
       </div>
+      <section class="card fit-card" style="margin-top:14px;">
+        <h3>提醒设置</h3>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink);margin-bottom:8px;"><input type="checkbox" id="remEnabled"> 开启提醒（页面/桌面窗口开着时生效）</label>
+        <div class="coach-grid">
+          <div><div class="cf-label">训练提醒（当天没练时）</div><input id="remTrain" type="time"></div>
+          <div><div class="cf-label">饮食提醒（当天没记录时）</div><input id="remDiet" type="time"></div>
+          <div><div class="cf-label">心得提醒（当天没写时）</div><input id="remJournal" type="time"></div>
+          <div><div class="cf-label">未打卡提醒</div><input id="remMiss" type="time"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn ghost" id="remPerm" style="padding:8px 12px;font-size:12.5px;">开启浏览器通知</button>
+          <button type="button" class="btn primary" id="remSave" style="padding:8px 14px;font-size:12.5px;">保存提醒</button>
+          <span id="remStatus" style="font-size:12px;color:var(--ink-3);align-self:center;"></span>
+        </div>
+      </section>
       <div id="archivedWrap"></div>
       </div>
     
@@ -927,7 +945,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] }, trainSchedule: {} }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] }, trainSchedule: {}, reminders: { enabled:false, train:'19:30', diet:'20:30', journal:'22:30', miss:'21:00', notified:{} } }; }
 
   function load(){
     try{
@@ -955,6 +973,7 @@
       raw.coach.chat = Array.isArray(raw.coach.chat) ? raw.coach.chat.slice(-200) : [];
       raw.coach.kb = Array.isArray(raw.coach.kb) ? raw.coach.kb : [];
       raw.trainSchedule = (raw.trainSchedule && typeof raw.trainSchedule === 'object') ? raw.trainSchedule : {};
+      raw.reminders = (raw.reminders && typeof raw.reminders === 'object') ? raw.reminders : { enabled:false, train:'19:30', diet:'20:30', journal:'22:30', miss:'21:00', notified:{} };
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1776,7 +1795,8 @@
           courses: Array.isArray(data.courses) ? data.courses : [],
           semester: (data.semester && typeof data.semester === 'object') ? { start: data.semester.start || '', weeks: +data.semester.weeks || 16, manualWeek: Math.max(0, +data.semester.manualWeek || 0) } : { start: '', weeks: 16, manualWeek: 0 },
           coach: (data.coach && typeof data.coach === 'object') ? data.coach : { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] },
-          trainSchedule: (data.trainSchedule && typeof data.trainSchedule === 'object') ? data.trainSchedule : {}
+          trainSchedule: (data.trainSchedule && typeof data.trainSchedule === 'object') ? data.trainSchedule : {},
+          reminders: (data.reminders && typeof data.reminders === 'object') ? data.reminders : { enabled:false, train:'19:30', diet:'20:30', journal:'22:30', miss:'21:00', notified:{} }
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -3762,6 +3782,45 @@
     save(); return rules.length;
   }
 
+  var AI_KEY = 'habit-ai-v1';
+  function aiCfg(){
+    try{ var o=JSON.parse(localStorage.getItem(AI_KEY)); if(o && typeof o==='object') return o; }catch(e){}
+    return { base:'https://api.openai.com/v1', model:'gpt-4o-mini', key:'', enabled:false };
+  }
+  function aiSaveCfg(c){ try{ localStorage.setItem(AI_KEY, JSON.stringify(c)); }catch(e){} }
+  function aiDataSummary(){
+    var td=tdeeCalc(), d7=diet7(), t7=train7(), wt=weightTrend(), hs=historyStats(), prog=progression();
+    var kb=[]; (state.coach.kb||[]).slice(-2).forEach(function(p){ (p.rules||[]).slice(0,8).forEach(function(r){ kb.push('['+r.topic+'] '+r.text); }); });
+    return '用户档案：'+JSON.stringify(cf())+'\n'
+      +'近7天：训练'+t7.sessions+'次/'+t7.sets+'组，平均感受'+t7.avgStar+'★；饮食记录'+d7.days+'天，日均'+Math.round(d7.kcal)+'kcal、蛋白'+Math.round(d7.protein)+'g、纤维'+Math.round(d7.fiber)+'g；体重趋势：'+JSON.stringify(wt)+'\n'
+      +'估算目标：'+JSON.stringify(td)+'\n'
+      +'近期动作表现：'+prog.slice(0,6).map(function(x){ return x.name+' 上次'+x.last.top+(x.prev?('（'+(x.delta>=0?'+':'')+x.delta+'%）'):''); }).join('；')+'\n'
+      +'历史数据量：训练'+hs.trainDays+'天，饮食'+hs.dietDays+'天，体重'+hs.weights+'条\n'
+      +(kb.length?('已导入知识包要点：\n'+kb.join('\n')):'');
+  }
+  function aiSystemPrompt(){
+    return '你是用户的私人健身教练，依据下面用户真实数据回答，中文、简洁、先结论后动作，最多200字，并在末尾追问一个有用的后续问题。\n'
+      +'安全规则：出现胸痛、胸闷、晕厥、严重头晕、放射痛、麻木无力时，停止训练建议，明确让用户尽快就医；不做医疗诊断；不做极端节食建议。\n'
+      +'增肌减脂建议基于证据：蛋白1.6-2.2g/kg；增重0.25-0.5kg/周；减脂0.5-1%/周；每部位10-20组/周；渐进超负荷2.5%或+1次。\n'
+      +'用户数据：\n'+aiDataSummary();
+  }
+  async function aiReply(q){
+    var cfg=aiCfg(); if(!cfg.enabled || !cfg.key || !cfg.base) return null;
+    var messages=[{role:'system',content:aiSystemPrompt()}];
+    (state.coach.chat||[]).slice(-8).forEach(function(m){ messages.push({role:(m.role==='user'?'user':'assistant'),content:m.text}); });
+    messages.push({role:'user',content:q});
+    try{
+      if(location.protocol==='http:'){
+        var r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:cfg.base,key:cfg.key,model:cfg.model,messages:messages})});
+        var j=await r.json();
+        return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || null;
+      }
+      var r2=await fetch(cfg.base.replace(/\/+$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},body:JSON.stringify({model:cfg.model,messages:messages,temperature:0.6})});
+      var j2=await r2.json();
+      return (j2.choices && j2.choices[0] && j2.choices[0].message && j2.choices[0].message.content) || null;
+    }catch(e){ return null; }
+  }
+
   function coachGreeting(){
     var hs = historyStats();
     return '我是你的私人教练，已自动读取：训练 '+hs.trainDays+' 天 / 饮食 '+hs.dietDays+' 天 / 体重 '+hs.weights+' 条。可以问我：今天怎么练？蛋白还差多少？体重趋势？下周计划？';
@@ -3871,8 +3930,10 @@
     save(); renderCoach();
     var cl=$('chatList');
     if(cl){ cl.insertAdjacentHTML('beforeend','<div class="chat-msg coach" id="typingMsg"><div class="chat-bubble typing">教练正在整理你的数据…</div></div>'); cl.scrollTop = cl.scrollHeight; }
-    setTimeout(function(){
-      state.coach.chat.push({ role:'coach', text:coachReply(q), ts:Date.now() });
+    setTimeout(async function(){
+      var ans = await aiReply(q);
+      if(!ans) ans = coachReply(q);
+      state.coach.chat.push({ role:'coach', text:ans, ts:Date.now() });
       if(state.coach.chat.length>200) state.coach.chat = state.coach.chat.slice(-200);
       save(); renderCoach();
       var cl2=$('chatList'); if(cl2) cl2.scrollTop = cl2.scrollHeight;
@@ -3958,6 +4019,16 @@
           ((state.coach.kb&&state.coach.kb.length)?'<button type="button" class="mnote-btn" data-act="kbClear">清空知识包</button>':'') +
         '</div>' +
       '</div>' +
+      '<div class="card fit-card"><h3>AI 教练（可选）</h3>' +
+        '<div style="font-size:12px;color:var(--ink-3);line-height:1.7;margin:-4px 2px 8px;">不填也能用本地教练；填入 OpenAI 兼容接口后可自由对话。Key 只保存在本机 localStorage，不进导出/仓库，仅通过本机服务代理调用。</div>' +
+        '<div class="coach-grid">' +
+          '<input id="aiBase" class="full" type="text" placeholder="API Base，默认 https://api.openai.com/v1">' +
+          '<input id="aiModel" type="text" placeholder="模型，如 gpt-4o-mini">' +
+          '<input id="aiKey" type="password" placeholder="API Key（sk-...）">' +
+        '</div>' +
+        '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);margin-bottom:8px;"><input type="checkbox" id="aiEnabled"> 启用真 AI 对话（失败自动回退本地教练）</label>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;"><button type="button" class="btn primary" data-act="aiSave" style="padding:8px 14px;font-size:12.5px;">保存 AI 设置</button><button type="button" class="btn ghost" data-act="aiTest" style="padding:8px 12px;font-size:12.5px;">测试连接</button><span id="aiStatus" style="font-size:12px;color:var(--ink-3);align-self:center;"></span></div>' +
+      '</div>' +
       '<div class="card fit-card"><h3>教练对话</h3>' +
         chatHtml() +
         '<div class="chat-quick">' +
@@ -4008,6 +4079,12 @@
         '<button type="button" class="btn ghost" data-act="symCheck" style="width:100%;padding:9px 0;">自查</button>' +
         '<div id="symResult" style="font-size:13px;color:var(--ink-2);margin-top:8px;"></div>' +
       '</div>';
+    var ac = aiCfg();
+    if($('aiBase')) $('aiBase').value = ac.base || '';
+    if($('aiModel')) $('aiModel').value = ac.model || '';
+    if($('aiKey')) $('aiKey').value = ac.key || '';
+    if($('aiEnabled')) $('aiEnabled').checked = !!ac.enabled;
+    if($('aiStatus')) $('aiStatus').textContent = ac.enabled ? (ac.key ? '已启用' : '已勾选但未填 Key') : '未启用（使用本地教练）';
     var cb = $('coachBody');
     if(cb){
       var cards = cb.children;
@@ -4024,6 +4101,23 @@
     var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
     if(!b) return;
     var act = b.getAttribute('data-act');
+    if(act === 'aiSave'){
+      var c=aiCfg();
+      c.base=$('aiBase').value.trim()||'https://api.openai.com/v1';
+      c.model=$('aiModel').value.trim()||'gpt-4o-mini';
+      if($('aiKey').value.trim()) c.key=$('aiKey').value.trim();
+      c.enabled=$('aiEnabled').checked;
+      aiSaveCfg(c); renderCoach(); return;
+    }
+    if(act === 'aiTest'){
+      var c2=aiCfg();
+      var base2=$('aiBase').value.trim()||c2.base, model2=$('aiModel').value.trim()||c2.model, key2=$('aiKey').value.trim()||c2.key;
+      aiSaveCfg({base:base2,model:model2,key:key2,enabled:true});
+      aiReply('用一句话打招呼并告诉我你能帮我什么').then(function(ans){
+        var el=$('aiStatus'); if(el) el.textContent = ans ? ('连接成功：'+String(ans).slice(0,40)) : '连接失败（检查 Base/Key/网络/CORS）';
+      });
+      return;
+    }
     if(act === 'kbSave'){
       var kt=$('kbTitle').value.trim(); if(!kt){ $('kbTitle').focus(); return; }
       var pts=$('kbPoints').value.split('\n').map(function(x){ return x.replace(/^[-•·\s]+/,'').trim(); }).filter(function(x){ return x; });
@@ -4071,6 +4165,60 @@
     }
   });
 
+  // ================= 提醒系统 =================
+  function remindersCfg(){ return state.reminders || (state.reminders = { enabled:false, train:'19:30', diet:'20:30', journal:'22:30', miss:'21:00', notified:{} }); }
+  function remTimeNow(){ var d=new Date(); return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); }
+  function remToast(title, msg, tab){
+    var el=document.createElement('div');
+    el.className='reminder-toast';
+    el.innerHTML='<div style="font-weight:700;margin-bottom:3px;">'+title+'</div><div style="font-size:12.5px;color:var(--ink-2);line-height:1.6;">'+msg+'</div>';
+    el.addEventListener('click', function(){ showView(tab); el.remove(); });
+    document.body.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 15000);
+  }
+  function remNotify(title, body){
+    try{ if('Notification' in window && Notification.permission==='granted'){ new Notification(title,{ body:body, icon:'icons/icon-192.png' }); } }catch(e){}
+  }
+  function remCheck(){
+    var cfg=remindersCfg(); if(!cfg.enabled) return;
+    var now=remTimeNow(), dk=today;
+    cfg.notified = cfg.notified || {};
+    function done(key, time, cond, title, msg, tab){
+      if(!time || now < time) return;
+      var flag=key+'@'+dk; if(cfg.notified[flag]) return;
+      if(!cond()) return;
+      cfg.notified[flag]=1; remToast(title,msg,tab); remNotify(title,msg);
+    }
+    done('train', cfg.train, function(){ return !(state.workouts[dk]&&state.workouts[dk].length); }, '该训练啦 🏋️', '今天还没有训练记录，去「健身 → 训练」安排一次吧。', 'fit');
+    done('diet', cfg.diet, function(){ return !(state.dietLog[dk]&&state.dietLog[dk].length); }, '记录今天吃了什么 🍚', '今天还没有饮食记录，去「健身 → 饮食」补一下。', 'fit');
+    done('journal', cfg.journal, function(){ return !(state.bullets[dk]&&state.bullets[dk].length) && !(state.journal[dk]&&state.journal[dk].trim()); }, '写两句今日心得 ✍️', '今天还没写心得，去「心得」记一条吧。', 'journal');
+    done('miss', cfg.miss, function(){
+      var act=(state.habits||[]).filter(function(h){ return !h.archived; });
+      if(!act.length) return false;
+      var c=act.filter(function(h){ return state.records[dk]&&state.records[dk][h.id]; }).length;
+      return c<act.length;
+    }, '今天还有习惯没打卡 ✅', '去「今日」把剩下的习惯完成吧。', 'today');
+    save();
+  }
+  function remInitUI(){
+    var cfg=remindersCfg();
+    if($('remEnabled')){ $('remEnabled').checked=!!cfg.enabled; $('remTrain').value=cfg.train||'19:30'; $('remDiet').value=cfg.diet||'20:30'; $('remJournal').value=cfg.journal||'22:30'; $('remMiss').value=cfg.miss||'21:00'; }
+    if($('remStatus')) $('remStatus').textContent = ('Notification' in window) ? ('通知权限：'+Notification.permission) : '浏览器不支持通知';
+  }
+  document.addEventListener('click', function(ev){
+    if(ev.target && ev.target.id==='remSave'){
+      var cfg=remindersCfg();
+      cfg.enabled=$('remEnabled').checked; cfg.train=$('remTrain').value; cfg.diet=$('remDiet').value; cfg.journal=$('remJournal').value; cfg.miss=$('remMiss').value;
+      cfg.notified={};
+      save(); remInitUI(); showHint('提醒已保存');
+    }
+    if(ev.target && ev.target.id==='remPerm'){
+      if('Notification' in window){ Notification.requestPermission().then(function(){ remInitUI(); }); }
+    }
+  });
+  setInterval(remCheck, 60000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) remCheck(); });
+
   // PWA：可安装到桌面 / 主屏幕
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')){
     window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
@@ -4096,6 +4244,8 @@
   renderDate();
   normalizeAllDiet();
   render();
+  remInitUI();
+  setTimeout(remCheck, 1500);
   loadJournal();
   applyLayoutPref();
   showView('today');

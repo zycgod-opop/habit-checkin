@@ -1,4 +1,4 @@
-const CACHE = 'habit-checkin-rei-v1';
+const CACHE = 'habit-checkin-rei-v2';
 const ASSETS = ['./', './index.html', './assets/rei-emblem.svg', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -29,6 +29,7 @@ self.addEventListener('fetch', (e) => {
     }))
   );
 });
+
 
 
 

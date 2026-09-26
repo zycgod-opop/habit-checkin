@@ -719,6 +719,17 @@
   .logo-reset.show{display:block;}
   .logo-reset:hover{color:var(--red);border-color:var(--red);}
 
+
+  /* ===== 自定义形象上传 ===== */
+  .rei-custom-row{display:flex;align-items:center;gap:8px;padding:7px 2px;border-top:1px solid var(--line);font-size:13px;color:var(--ink);}
+  .rei-custom-row:first-of-type{border-top:none;}
+  .rei-custom-row .rc-name{flex:1;}
+  .rei-custom-row .rc-state{font-size:11.5px;color:var(--ink-3);}
+  .rei-custom-btn{border:1px solid var(--line-strong);background:var(--surface-2);color:var(--blue);border-radius:999px;padding:4px 11px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .rei-custom-btn:hover{border-color:var(--blue);}
+  .rei-pet-img{width:100%;height:auto;display:block;border-radius:14px;}
+  .rei-face-img{width:200px;max-width:62%;display:block;margin:0 auto;border-radius:16px;object-fit:cover;}
+
 </style>
 </head>
 <body>
@@ -760,6 +771,7 @@
       </section>
 
       <section class="card rei-face-card" id="reiFaceCard">
+        <img class="rei-face-img" id="reiFaceImg" hidden alt="自定义大头照">
         <svg class="rei-face" id="reiFace" data-mood="normal" viewBox="0 0 600 600" aria-label="凌波丽大头照">
           <rect width="600" height="600" rx="150" fill="#EAF5FB"/>
           <circle cx="300" cy="300" r="215" fill="#ffffff" opacity=".7"/>
@@ -788,6 +800,15 @@
           <button type="button" class="rei-face-btn" id="reiFaceCycle">切换表情</button>
         </div>
       </section>
+
+      <section class="card fit-card" id="reiCustomPanel">
+        <h3>自定义形象</h3>
+        <div class="rei-custom-row"><span class="rc-name">桌宠图片</span><span class="rc-state" id="rcPetState">默认</span><button type="button" class="rei-custom-btn" data-slot="pet">选择图片</button><button type="button" class="rei-custom-btn" data-reset="pet">恢复默认</button></div>
+        <div class="rei-custom-row"><span class="rc-name">大头照</span><span class="rc-state" id="rcFaceState">默认</span><button type="button" class="rei-custom-btn" data-slot="face">选择图片</button><button type="button" class="rei-custom-btn" data-reset="face">恢复默认</button></div>
+        <div class="rei-custom-row"><span class="rc-name">每日卡片图片</span><span class="rc-state" id="rcDailyState">默认</span><button type="button" class="rei-custom-btn" data-slot="daily">选择图片</button><button type="button" class="rei-custom-btn" data-reset="daily">恢复默认</button></div>
+        <p class="fit-note" style="margin-top:8px;">图片只保存在本机浏览器，不会上传、不会进入仓库；建议选择主体清晰的正方形图片。</p>
+      </section>
+
 
           <button type="button" id="layoutBtn" class="layout-btn">双栏</button>
         </div>
@@ -4356,6 +4377,7 @@
   <!-- 凌波丽桌宠 -->
   <div class="rei-pet" id="reiPet" title="点我说话 / 可以拖动">
     <div class="rei-bubble" id="reiBubble" hidden></div>
+    <img class="rei-pet-img" id="reiPetImg" hidden alt="自定义桌宠">
     <svg viewBox="0 0 120 170" aria-label="凌波丽桌宠">
       <ellipse cx="60" cy="162" rx="30" ry="6" fill="#9CCBE0" opacity=".35"/>
       <rect x="44" y="118" width="12" height="38" rx="6" fill="#ffffff" stroke="#1B2A3A" stroke-width="4"/>
@@ -4541,10 +4563,11 @@
   function render(i,anim){
     cur=((i%QUOTES.length)+QUOTES.length)%QUOTES.length;
     var q=QUOTES[cur];
-    function set(){ en.textContent=q.en; zh.textContent=q.zh; img.src='assets/rei-face-'+q.mood+'.png'; }
+    function set(){ en.textContent=q.en; zh.textContent=q.zh; var cust=null; try{ cust=localStorage.getItem('rei-daily-photo'); }catch(e){} img.src=cust||('assets/rei-face-'+q.mood+'.png'); }
     if(anim){ card.classList.add('fading'); setTimeout(function(){ set(); card.classList.remove('fading'); },240); } else set();
     dateEl.textContent=dateText();
   }
+  window.__reiDailyRefresh=function(){ render(cur,false); };
   document.getElementById('reiDailyRefresh').addEventListener('click', function(){
     var n=cur; while(n===cur && QUOTES.length>1) n=Math.floor(Math.random()*QUOTES.length);
     render(n,true);
@@ -4627,6 +4650,69 @@
     reader.readAsDataURL(f);
     input.value='';
   });
+})();
+</script>
+
+
+<script>
+(function(){
+  'use strict';
+  var KEYS={pet:'rei-pet-photo',face:'rei-face-photo',daily:'rei-daily-photo'};
+  var MAX={pet:420,face:520,daily:760};
+  var input=document.createElement('input'); input.type='file'; input.accept='image/*'; input.id='reiCustomFile'; input.style.display='none';
+  document.body.appendChild(input);
+  var pendingSlot=null;
+  function read(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function applySlot(slot){
+    var data=read(KEYS[slot]);
+    if(slot==='pet'){
+      var svg=document.querySelector('#reiPet > svg'); var img=document.getElementById('reiPetImg');
+      if(data){ svg.style.display='none'; img.hidden=false; img.src=data; } else { svg.style.display=''; img.hidden=true; img.removeAttribute('src'); }
+      var st=document.getElementById('rcPetState'); if(st) st.textContent=data?'已自定义':'默认';
+    } else if(slot==='face'){
+      var fsvg=document.getElementById('reiFace'); var fimg=document.getElementById('reiFaceImg');
+      if(data){ fsvg.style.display='none'; fimg.hidden=false; fimg.src=data; } else { fsvg.style.display=''; fimg.hidden=true; fimg.removeAttribute('src'); }
+      var st2=document.getElementById('rcFaceState'); if(st2) st2.textContent=data?'已自定义':'默认';
+    } else {
+      if(window.__reiDailyRefresh) window.__reiDailyRefresh();
+      var st3=document.getElementById('rcDailyState'); if(st3) st3.textContent=data?'已自定义':'默认';
+    }
+  }
+  function applyAll(){ applySlot('pet'); applySlot('face'); applySlot('daily'); }
+  document.addEventListener('click', function(ev){
+    var b=ev.target.closest?ev.target.closest('[data-slot],[data-reset]'):null;
+    if(!b) return;
+    if(b.getAttribute('data-slot')){ pendingSlot=b.getAttribute('data-slot'); input.click(); }
+    else if(b.getAttribute('data-reset')){ var slot=b.getAttribute('data-reset'); try{ localStorage.removeItem(KEYS[slot]); }catch(e){} applySlot(slot); }
+  });
+  input.addEventListener('change', function(){
+    var f=input.files&&input.files[0]; if(!f||!pendingSlot) return;
+    var slot=pendingSlot;
+    var reader=new FileReader();
+    reader.onload=function(){
+      var im=new Image();
+      im.onload=function(){
+        var max=MAX[slot]||512, scale=Math.min(1,max/Math.max(im.width,im.height));
+        var w=Math.max(1,Math.round(im.width*scale)), h=Math.max(1,Math.round(im.height*scale));
+        var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        var ctx=cv.getContext('2d'); ctx.drawImage(im,0,0,w,h);
+        var isPng=/image\/png/i.test(f.type);
+        var data=isPng?cv.toDataURL('image/png'):cv.toDataURL('image/jpeg',0.86);
+        try{ localStorage.setItem(KEYS[slot],data); }catch(e){ alert('图片太大或浏览器存储受限，请换一张小一点的图片'); return; }
+        applySlot(slot);
+      };
+      im.onerror=function(){ alert('这张图片无法读取，请换一张试试'); };
+      im.src=reader.result;
+    };
+    reader.readAsDataURL(f);
+    input.value='';
+  });
+  // 每日卡片刷新后重新套用自定义图片
+  document.addEventListener('click', function(ev){
+    if(ev.target && ev.target.id==='reiDailyRefresh'){ setTimeout(function(){ applySlot('daily'); },320); }
+  });
+  applyAll();
+  window.addEventListener('load', function(){ applyAll(); });
 })();
 </script>
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>今日打卡 · 凌波丽</title>
+<title>今日打卡 · LA Clippers</title>
 <meta name="theme-color" content="#eef1f6">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,20 +13,20 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
   :root{
-    --canvas:#eef5f9;
+    --canvas:#eef1f6;
     --surface:#ffffff;
-    --surface-2:#f4f9fc;
-    --line:#e2edf4;
-    --line-strong:#d2e4ee;
-    --ink:#14202e;
-    --ink-2:#5a6b7d;
-    --ink-3:#93a6b6;
-    --red:#E23A4E;
-    --red-bright:#F04E62;
-    --red-dark:#B32036;
-    --red-soft:#fdecef;
-    --blue:#4E8FB5;
-    --blue-soft:#e6f2f8;
+    --surface-2:#f7f9fc;
+    --line:#e6eaf2;
+    --line-strong:#d9e0ec;
+    --ink:#101b3a;
+    --ink-2:#55617e;
+    --ink-3:#939db3;
+    --red:#C8102E;
+    --red-bright:#de1f3c;
+    --red-dark:#a40d26;
+    --red-soft:#fbecee;
+    --blue:#1D428A;
+    --blue-soft:#e9eef7;
     --shadow-sm:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.04);
     --shadow-md:0 6px 18px rgba(16,24,40,.07);
   }
@@ -296,7 +296,7 @@
     #layoutBtn{display:none;}
   }
 
-  /* brand: REI AYANAMI wordmark */
+  /* brand: CLIPPERS wordmark */
   .brand{display:flex;align-items:center;gap:14px;}
   .brand .team-logo{margin:0;width:50px;height:50px;}
   .brand-text{display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0;}
@@ -667,9 +667,9 @@
   <main class="app">
     <header>
       <div class="brand">
-        <img id="teamLogo" class="team-logo" src="assets/rei-emblem.svg" alt="凌波丽" onerror="this.style.display='none'">
+        <img id="teamLogo" class="team-logo" src="clippers-logo.svg" alt="LA Clippers" onerror="this.style.display='none'">
         <div class="brand-text">
-          <span class="brand-en">REI AYANAMI</span>
+          <span class="brand-en">CLIPPERS</span>
           <h1>今日打卡</h1>
         </div>
       </div>
@@ -790,7 +790,7 @@
         <a id="helpBtn">栏目说明</a> · <a id="syncOpenBtn">账号 / 同步</a> · <a id="exportBtn">导出数据</a> · <a id="importBtn">导入数据</a>
       </div>
       <div class="install-wrap"><button type="button" id="installAppBtn" class="install-btn">📲 安装为 App（安卓 / 桌面）</button></div>
-      <div class="team-line">EVA · 凌波丽 · 今天也一起加油</div>
+      <div class="team-line">LA Clippers · 坚持就是胜利</div>
       <div class="foot-note">数据保存在本浏览器中，每天自动开始新的一天</div>
       <input type="file" id="importFile" accept=".json,application/json" hidden>
     </footer>

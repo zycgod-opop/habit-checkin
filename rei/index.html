@@ -683,6 +683,21 @@
   @keyframes reiWalkR{0%{transform:translateX(0);}50%{transform:translateX(90px);}100%{transform:translateX(0);}}
   @media (prefers-reduced-motion: reduce){.rei-pet,.rei-eyes{animation:none !important;}}
 
+
+  /* ===== 凌波丽大头照 ===== */
+  .rei-face-card{padding:16px 16px 12px;text-align:center;margin-bottom:14px;}
+  .rei-face{width:200px;max-width:62%;display:block;margin:0 auto;}
+  .rei-face [class^="fx-"]{display:none;}
+  .rei-face[data-mood="normal"] .fx-normal{display:block;}
+  .rei-face[data-mood="happy"] .fx-happy{display:block;}
+  .rei-face[data-mood="happy"] .fx-blush{display:block;}
+  .rei-face[data-mood="tired"] .fx-tired{display:block;}
+  .rei-face[data-mood="stern"] .fx-stern{display:block;}
+  .rei-face-mood{font-size:13px;color:var(--ink-2);margin-top:8px;min-height:20px;}
+  .rei-face-actions{margin-top:8px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+  .rei-face-btn{border:1px solid var(--line-strong);background:var(--surface-2);color:var(--blue);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .rei-face-btn:hover{border-color:var(--blue);}
+
 </style>
 </head>
 <body>
@@ -711,6 +726,36 @@
       <div class="checkin-col">
         <div class="view-topbar">
           <p class="date" id="dateText"></p>
+      <section class="card rei-face-card" id="reiFaceCard">
+        <svg class="rei-face" id="reiFace" data-mood="normal" viewBox="0 0 600 600" aria-label="凌波丽大头照">
+          <rect width="600" height="600" rx="150" fill="#EAF5FB"/>
+          <circle cx="300" cy="300" r="215" fill="#ffffff" opacity=".7"/>
+          <path d="M70 470 Q300 380 530 470" stroke="#9CCBE0" stroke-width="9" fill="none" opacity=".4"/>
+          <path d="M120 520 Q300 470 480 520" stroke="#E8752A" stroke-width="7" fill="none" opacity=".25"/>
+          <path d="M150 540 C165 440 220 400 300 400 C380 400 435 440 450 540 Z" fill="#ffffff" stroke="#1B2A3A" stroke-width="12"/>
+          <path d="M245 420 L300 480 L355 420" fill="none" stroke="#E8752A" stroke-width="15" stroke-linecap="round"/>
+          <path d="M150 300 C150 150 210 88 300 88 C390 88 450 150 450 300 C450 360 430 405 400 435 L370 330 L345 445 L300 390 L255 445 L230 330 L200 435 C170 405 150 360 150 300 Z" fill="#A9D6EA" stroke="#1B2A3A" stroke-width="12" stroke-linejoin="round"/>
+          <path d="M195 300 C195 390 240 445 300 445 C360 445 405 390 405 300 C405 225 360 190 300 190 C240 190 195 225 195 300 Z" fill="#F7E4DB" stroke="#1B2A3A" stroke-width="12"/>
+          <path d="M190 300 C200 200 240 160 300 160 C360 160 400 200 410 300 L370 265 L345 315 L310 250 L285 320 L250 250 L220 315 L190 275 Z" fill="#A9D6EA" stroke="#1B2A3A" stroke-width="12" stroke-linejoin="round"/>
+          <ellipse cx="255" cy="305" rx="30" ry="34" fill="#ffffff" stroke="#1B2A3A" stroke-width="9"/>
+          <ellipse cx="345" cy="305" rx="30" ry="34" fill="#ffffff" stroke="#1B2A3A" stroke-width="9"/>
+          <circle cx="255" cy="307" r="14" fill="#E23A4E"/><circle cx="345" cy="307" r="14" fill="#E23A4E"/>
+          <circle cx="250" cy="300" r="5" fill="#ffffff"/><circle cx="340" cy="300" r="5" fill="#ffffff"/>
+          <g class="fx-blush"><ellipse cx="225" cy="365" rx="26" ry="12" fill="#F3A0A8" opacity=".6"/><ellipse cx="375" cy="365" rx="26" ry="12" fill="#F3A0A8" opacity=".6"/></g>
+          <g class="fx-tired"><path d="M222 300 Q255 282 288 300" stroke="#1B2A3A" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M312 300 Q345 282 378 300" stroke="#1B2A3A" stroke-width="8" fill="none" stroke-linecap="round"/><text x="420" y="220" font-size="54" fill="#4E8FB5" font-family="Arial">Z</text><text x="464" y="176" font-size="36" fill="#4E8FB5" font-family="Arial">z</text></g>
+          <g class="fx-stern"><path d="M215 262 L285 278" stroke="#1B2A3A" stroke-width="10" stroke-linecap="round"/><path d="M385 262 L315 278" stroke="#1B2A3A" stroke-width="10" stroke-linecap="round"/></g>
+          <g class="fx-normal"><path d="M282 385 Q300 393 318 385" stroke="#1B2A3A" stroke-width="8" fill="none" stroke-linecap="round"/></g>
+          <g class="fx-happy"><path d="M272 378 Q300 408 328 378" stroke="#1B2A3A" stroke-width="9" fill="none" stroke-linecap="round"/></g>
+          <g class="fx-tired"><path d="M282 388 Q300 384 318 388" stroke="#1B2A3A" stroke-width="8" fill="none" stroke-linecap="round"/></g>
+          <g class="fx-stern"><path d="M282 392 L318 392" stroke="#1B2A3A" stroke-width="8" stroke-linecap="round"/></g>
+        </svg>
+        <div class="rei-face-mood" id="reiFaceMood">……今天也要打卡。</div>
+        <div class="rei-face-actions">
+          <button type="button" class="rei-face-btn" id="reiFaceSave">保存大头照</button>
+          <button type="button" class="rei-face-btn" id="reiFaceCycle">切换表情</button>
+        </div>
+      </section>
+
           <button type="button" id="layoutBtn" class="layout-btn">双栏</button>
         </div>
 
@@ -4381,6 +4426,52 @@
   });
   try{ var pos=JSON.parse(localStorage.getItem('rei-pet-pos')); if(pos&&pos.left){ pet.style.left=pos.left; pet.style.top=pos.top; pet.style.right='auto'; pet.style.bottom='auto'; } }catch(e){}
   setTimeout(function(){ say('……欢迎回来。',4000); }, 1200);
+})();
+</script>
+
+
+<script>
+(function(){
+  'use strict';
+  var svg=document.getElementById('reiFace'); if(!svg) return;
+  var txt=document.getElementById('reiFaceMood');
+  var moodSeq=['normal','happy','tired','stern'];
+  var moodText={
+    normal:['……今天也要打卡。','我会看着你完成。','不要勉强自己，但要开始。'],
+    happy:['全部完成。……辛苦了。','今天做得很好。'],
+    tired:['……昨晚没睡好，今天轻一点。','休息也是训练的一部分。'],
+    stern:['……拖延太久了。现在做 5 分钟。','要么做，要么删掉。']
+  };
+  function todayStr(){ var d=new Date(); var p=function(x){return (x<10?'0':'')+x;}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+  function readState(){ try{ return JSON.parse(localStorage.getItem('habit-checkin-v1'))||{}; }catch(e){ return {}; } }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function computeMood(){
+    var st=readState(), t=todayStr();
+    var habits=(st.habits||[]).filter(function(h){ return !h.archived; });
+    var undone=habits.filter(function(h){ return !(st.records&&st.records[t]&&st.records[t][h.id]); }).length;
+    var overdue=0;
+    Object.keys(st.bullets||{}).forEach(function(k){ if(k<t) (st.bullets[k]||[]).forEach(function(b){ if(b.t==='task'&&!b.done) overdue++; }); });
+    var sleep=0; var ms=((st.coach||{}).metrics)||{}; var keys=Object.keys(ms).sort();
+    if(keys.length && ms[keys[keys.length-1]] && ms[keys[keys.length-1]].sleep) sleep=+ms[keys[keys.length-1]].sleep;
+    if(overdue>=7) return 'stern';
+    if(habits.length && undone===0) return 'happy';
+    if(sleep && sleep<6) return 'tired';
+    return 'normal';
+  }
+  function apply(m){
+    var mood=m||computeMood();
+    svg.setAttribute('data-mood',mood);
+    txt.textContent=pick(moodText[mood]||moodText.normal);
+  }
+  document.getElementById('reiFaceCycle').addEventListener('click', function(){
+    var cur=svg.getAttribute('data-mood'); var i=(moodSeq.indexOf(cur)+1)%moodSeq.length; apply(moodSeq[i]);
+  });
+  document.getElementById('reiFaceSave').addEventListener('click', function(){
+    var mood=svg.getAttribute('data-mood');
+    var a=document.createElement('a'); a.href='assets/rei-face-'+mood+'.png'; a.download='凌波丽大头照-'+mood+'.png'; document.body.appendChild(a); a.click(); a.remove();
+  });
+  apply(); setInterval(function(){ apply(); }, 20000);
+  svg.addEventListener('click', function(){ var cur=svg.getAttribute('data-mood'); var i=(moodSeq.indexOf(cur)+1)%moodSeq.length; apply(moodSeq[i]); });
 })();
 </script>
 

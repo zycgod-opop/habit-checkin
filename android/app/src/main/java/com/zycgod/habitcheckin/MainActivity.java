@@ -16,7 +16,7 @@ import android.widget.ProgressBar;
 import android.widget.FrameLayout;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://zycgod-opop.github.io/habit-checkin/";
+    private static final String HOME = "https://zycgod-opop.github.io/habit-checkin/rei/";
     private WebView web;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -70,3 +70,4 @@ public class MainActivity extends Activity {
         else { super.onBackPressed(); }
     }
 }
+

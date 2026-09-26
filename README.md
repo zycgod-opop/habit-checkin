@@ -1,6 +1,10 @@
-# 今日打卡 · 凌波丽版
+# 今日打卡（双版本：快船主版 + 凌波丽版）
 
-一个简洁的每日习惯打卡网页，纯本地使用，带凌波丽（EVA）主题：淡蓝短发 + 红眼 + 白色驾驶服配色。
+一个简洁的每日习惯打卡网页，纯本地使用，含两个主题版本：index.html 是 LA Clippers 主版本（你自己用）；ei/index.html 是独立的凌波丽版（淡蓝短发+红眼+白色驾驶服，含桌宠，给朋友试玩）。
+
+## 两个版本
+- 快船主版：https://zycgod-opop.github.io/habit-checkin/
+- 凌波丽版（含桌宠）：https://zycgod-opop.github.io/habit-checkin/rei/
 
 ## 使用方法
 - 双击打开 `index.html`（或用浏览器打开），无需联网、无需安装。
@@ -36,7 +40,9 @@
 
 ## 文件
 - index.html —— 整个应用（样式 + 逻辑都在里面）
-- assets/rei-emblem.svg —— 原创凌波丽风格矢量徽标（左上角图标，淡蓝短发 + 红眼 + 白色驾驶服）
+- clippers-logo.svg —— LA Clippers 官方队标（主版本左上角图标）
+- assets/rei-emblem.svg —— 原创凌波丽风格矢量徽标（凌波丽版左上角图标）
+- rei/ —— 凌波丽独立版本（index.html、assets、icons、manifest、sw，含浮动桌宠）
 - supabase.sql —— Supabase 建表与行级安全策略（首次云端同步前执行一次）
 
 
@@ -48,4 +54,5 @@
 - 桌面版自带 untime/node.exe（88MB，已加入 .gitignore），不依赖 Codex 缓存。
 - **提醒系统**：今日页「提醒设置」可设训练/饮食/心得/未打卡提醒时间；浏览器通知需点「开启浏览器通知」授权；提醒在页面或桌面窗口开着时生效。
 - **AI 教练（可选）**：健身 → 教练 → AI 教练，填入 OpenAI 兼容 Base/模型/Key 并启用；Key 只存本机 localStorage，不随导出/仓库；本地服务通过 /api/ai 代理调用；失败自动回退本地规则教练。
+
 

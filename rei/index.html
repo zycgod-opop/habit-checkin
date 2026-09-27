@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>今日打卡 · 凌波丽</title>
+<title>今日の習慣チェック · レイ</title>
 <meta name="theme-color" content="#eef1f6">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -684,7 +684,7 @@
   @media (prefers-reduced-motion: reduce){.rei-pet,.rei-eyes{animation:none !important;}}
 
 
-  /* ===== 凌波丽大头照 ===== */
+  /* ===== 凌波丽顔写真 ===== */
   .rei-face-card{padding:16px 16px 12px;text-align:center;margin-bottom:14px;}
   .rei-face{width:200px;max-width:62%;display:block;margin:0 auto;}
   .rei-face [class^="fx-"]{display:none;}
@@ -720,7 +720,7 @@
   .logo-reset:hover{color:var(--red);border-color:var(--red);}
 
 
-  /* ===== 自定义形象上传 ===== */
+  /* ===== カスタム画像上传 ===== */
   .rei-custom-row{display:flex;align-items:center;gap:8px;padding:7px 2px;border-top:1px solid var(--line);font-size:13px;color:var(--ink);}
   .rei-custom-row:first-of-type{border-top:none;}
   .rei-custom-row .rc-name{flex:1;}
@@ -743,10 +743,10 @@
   <main class="app">
     <header>
       <div class="brand">
-        <img id="teamLogo" class="team-logo" src="assets/rei1.jpg" alt="凌波丽" onerror="this.style.display='none'">
+        <img id="teamLogo" class="team-logo" src="assets/c7eb41f848245c9d765cbdab713b3163.jpg" alt="凌波丽" onerror="this.style.display='none'">
         <div class="brand-text">
           <span class="brand-en">REI AYANAMI</span>
-          <h1>今日打卡</h1>
+          <h1>今日のチェック</h1>
         </div>
       </div>
       <nav class="tabs" role="tablist" aria-label="视图切换">
@@ -766,33 +766,34 @@
         <div class="view-topbar">
           <p class="date" id="dateText"></p>
       <section class="card rei-daily" id="reiDaily">
-        <img class="rei-daily-img" id="reiDailyImg" src="assets/rei-face-normal.png" alt="凌波丽">
+        <img class="rei-daily-img" id="reiDailyImg" src="assets/c7eb41f848245c9d765cbdab713b3163.jpg" alt="凌波丽">
         <div class="rei-daily-en" id="reiDailyEn">I am not alone.</div>
-        <div class="rei-daily-zh" id="reiDailyZh">我不是一个人。</div>
+        <div class="rei-daily-zh" id="reiDailyZh">私は一人じゃない。</div>
         <div class="rei-daily-line"></div>
         <div class="rei-daily-date" id="reiDailyDate"></div>
         <div class="rei-daily-actions">
-          <button type="button" class="rei-daily-btn" id="reiDailyRefresh">刷新卡片</button>
-          <button type="button" class="rei-daily-btn" id="reiDailySave">保存图片</button>
+          <button type="button" class="rei-daily-btn" id="reiDailyRefresh">カードを更新</button>
+          <button type="button" class="rei-daily-btn" id="reiDailySave">画像を保存</button>
         </div>
       </section>
 
       <section class="card rei-face-card" id="reiFaceCard">
-        <img class="rei-face-img" id="reiFaceImg" data-mood="normal" src="assets/rei1.jpg" alt="凌波丽">
+        <img class="rei-face-img" id="reiFaceImg" data-mood="normal" src="assets/c7eb41f848245c9d765cbdab713b3163.jpg" alt="凌波丽">
         
         <div class="rei-face-mood" id="reiFaceMood">……今天也要打卡。</div>
         <div class="rei-face-actions">
-          <button type="button" class="rei-face-btn" id="reiFaceSave">保存大头照</button>
-          <button type="button" class="rei-face-btn" id="reiFaceCycle">切换表情</button>
+          <button type="button" class="rei-face-btn" id="reiFaceSave">顔写真を保存</button>
+          <button type="button" class="rei-face-btn" id="reiFaceCycle">表情を変える</button>
         </div>
       </section>
 
       <section class="card fit-card" id="reiCustomPanel">
-        <h3>自定义形象</h3>
-        <div class="rei-custom-row"><span class="rc-name">桌宠图片</span><span class="rc-state" id="rcPetState">默认</span><button type="button" class="rei-custom-btn" data-slot="pet">选择图片</button><button type="button" class="rei-custom-btn" data-reset="pet">恢复默认</button></div>
-        <div class="rei-custom-row"><span class="rc-name">大头照</span><span class="rc-state" id="rcFaceState">默认</span><button type="button" class="rei-custom-btn" data-slot="face">选择图片</button><button type="button" class="rei-custom-btn" data-reset="face">恢复默认</button></div>
-        <div class="rei-custom-row"><span class="rc-name">每日卡片图片</span><span class="rc-state" id="rcDailyState">默认</span><button type="button" class="rei-custom-btn" data-slot="daily">选择图片</button><button type="button" class="rei-custom-btn" data-reset="daily">恢复默认</button></div>
-        <p class="fit-note" style="margin-top:8px;">图片只保存在本机浏览器，不会上传、不会进入仓库；建议选择主体清晰的正方形图片。</p>
+        <h3>カスタム画像</h3>
+        <div class="rei-custom-row"><span class="rc-name">デスクトップペット</span><span class="rc-state" id="rcPetState">デフォルト</span><button type="button" class="rei-custom-btn" data-slot="pet">画像を選択</button><button type="button" class="rei-custom-btn" data-reset="pet">デフォルトに戻す</button></div>
+        <div class="rei-custom-row"><span class="rc-name">顔写真</span><span class="rc-state" id="rcFaceState">デフォルト</span><button type="button" class="rei-custom-btn" data-slot="face">画像を選択</button><button type="button" class="rei-custom-btn" data-reset="face">デフォルトに戻す</button></div>
+        <div class="rei-custom-row"><span class="rc-name">デイリーカード画像</span><span class="rc-state" id="rcDailyState">デフォルト</span><button type="button" class="rei-custom-btn" data-slot="daily">画像を選択</button><button type="button" class="rei-custom-btn" data-reset="daily">デフォルトに戻す</button></div>
+        <div class="rei-custom-row"><span class="rc-name">画像ギャラリー</span><span class="rc-state" id="rcGalState"></span><button type="button" class="rei-custom-btn" data-gal="-1">前へ</button><button type="button" class="rei-custom-btn" data-gal="1">次へ</button></div>
+        <p class="fit-note" style="margin-top:8px;">画像はこの端末のブラウザにのみ保存され、アップロードや公開はされません。正方形の画像がおすすめです。</p>
       </section>
 
 
@@ -4095,7 +4096,7 @@
         '</div>' +
         '<button type="button" class="btn primary" data-act="saveMetric" style="width:100%;padding:10px 0;">保存记录</button>' +
         '<details class="field-help"><summary>每个空怎么填？</summary><ul>' +
-          '<li><b>日期</b>：这条记录算哪一天，默认今天；补记前几天也可以改。</li>' +
+          '<li><b>日期</b>：这条记录算哪一天，デフォルト今天；补记前几天也可以改。</li>' +
           '<li><b>体重 kg</b>：建议晨起空腹、上完厕所后称，穿同样衣服；用于热量目标、蛋白目标和 7 日趋势。</li>' +
           '<li><b>体脂 %</b>（可不填）：体脂秤/体测的数值，不用天天测，每周 1 次看趋势即可。</li>' +
           '<li><b>腰围 cm</b>（可不填）：肚脐水平绕一圈，早上空腹量；体重不动但腰围下降＝在变瘦。</li>' +
@@ -4130,7 +4131,7 @@
       '<div class="card fit-card"><h3>AI 教练（可选）</h3>' +
         '<div style="font-size:12px;color:var(--ink-3);line-height:1.7;margin:-4px 2px 8px;">不填也能用本地教练；填入 OpenAI 兼容接口后可自由对话。Key 只保存在本机 localStorage，不进导出/仓库，仅通过本机服务代理调用。</div>' +
         '<div class="coach-grid">' +
-          '<input id="aiBase" class="full" type="text" placeholder="API Base，默认 https://api.openai.com/v1">' +
+          '<input id="aiBase" class="full" type="text" placeholder="API Base，デフォルト https://api.openai.com/v1">' +
           '<input id="aiModel" type="text" placeholder="模型，如 gpt-4o-mini">' +
           '<input id="aiKey" type="password" placeholder="API Key（sk-...）">' +
         '</div>' +
@@ -4360,10 +4361,16 @@
 })();
 </script>
 
+<script>
+window.REI_GALLERY=["c7eb41f848245c9d765cbdab713b3163.jpg", "5aade17b3012839d96a27c108ae35345.jpg", "d153e0cbeed8a3192d70e4a15f5c03e7.jpg", "3d5adfe32552b4ebb133ff7ce52febf6.jpg", "6456e4d82d5545934138303506af5356.jpg", "e9381aed682dd4af9e8f25049b652ec1.jpg", "31efd4e99a8ad49b59a3365eeacdb986.jpg", "5fe1710b26f9a9a7fe25fa3f8bf1be16.jpg", "5d086bb0999a5bef713f37edf01f60ad.jpg"];
+window.reiGalleryIndex=function(){var n=REI_GALLERY.length;var i=+localStorage.getItem('rei-gallery-index')||0;return ((i%n)+n)%n;};
+window.reiGallerySrc=function(off){var n=REI_GALLERY.length;var i=(reiGalleryIndex()+(off||0)+n)%n;return 'assets/'+REI_GALLERY[i];};
+window.reiGalleryShift=function(d){var n=REI_GALLERY.length;localStorage.setItem('rei-gallery-index',String((reiGalleryIndex()+d+n)%n));};
+</script>
   <!-- 凌波丽桌宠 -->
   <div class="rei-pet" id="reiPet" title="点我说话 / 可以拖动">
     <div class="rei-bubble" id="reiBubble" hidden></div>
-    <img class="rei-pet-img" id="reiPetImg" src="assets/rei1.jpg" alt="凌波丽桌宠">
+    <img class="rei-pet-img" id="reiPetImg" src="assets/c7eb41f848245c9d765cbdab713b3163.jpg" alt="凌波丽桌宠">
     
   </div>
   <button class="rei-pet-toggle" id="reiPetToggle" title="隐藏/显示桌宠">👁</button>
@@ -4377,8 +4384,8 @@
   var toggle=document.getElementById('reiPetToggle');
   var quote=document.getElementById('reiQuote');
   if(!pet) return;
-  var lines=['……','今天也要加油。','我会看着你打卡的。','不要勉强自己，但要完成。','EVA-00，待机中。','任务完成了吗？','同步率……还不错。'];
-  var quotes=['……','今天也要好好打卡。','我会在一边看着。','别勉强，但也别放弃。','同步率 100%。'];
+  var lines=['……','今日も頑張って。','チェックを見ているよ。','無理しないで、でも終わらせて。','EVA-00、待機中。','タスクは終わった？','シンクロ率……悪くない。'];
+  var quotes=['……','今日もちゃんとチェック。','そばで見ているよ。','無理しないで、でも諦めないで。','シンクロ率 100%。'];
   function readState(){ try{ return JSON.parse(localStorage.getItem('habit-checkin-v1'))||{}; }catch(e){ return {}; } }
   function todayStr(){ var d=new Date(); var p=function(x){return (x<10?'0':'')+x;}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
   function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
@@ -4389,9 +4396,9 @@
     var undone=habits.filter(function(h){ return !(st.records&&st.records[t]&&st.records[t][h.id]); }).length;
     var overdue=0;
     Object.keys(st.bullets||{}).forEach(function(k){ if(k<t) (st.bullets[k]||[]).forEach(function(b){ if(b.t==='task'&&!b.done) overdue++; }); });
-    if(habits.length && undone===0) return '全部完成。……了不起。';
-    if(overdue>0) return '有 '+overdue+' 件事拖了很久了。现在做 5 分钟就好。';
-    if(undone>0) return '今天还有 '+undone+' 项没打卡。要一起完成吗？';
+    if(habits.length && undone===0) return '全部完了。……えらい。';
+    if(overdue>0) return 'あと '+overdue+' 件、ずっと放置されている。5分だけやろう。';
+    if(undone>0) return '今日はあと '+undone+' 件。一緒に終わらせよう？';
     return pick(lines);
   }
   // 台词轮播
@@ -4436,7 +4443,7 @@
     var pc=document.getElementById('progressCard');
     if(pc && pc.classList.contains('all-done')){
       var key='rei-celebrate-'+todayStr();
-      try{ if(!localStorage.getItem(key)){ localStorage.setItem(key,'1'); say('今天全部完成。……辛苦了。',6000); } }catch(e){}
+      try{ if(!localStorage.getItem(key)){ localStorage.setItem(key,'1'); say('今日は全部完了。……お疲れさま。',6000); } }catch(e){}
     }
   }, 5000);
   // 隐藏/显示
@@ -4446,7 +4453,7 @@
     try{ localStorage.setItem('rei-pet-hidden', pet.hidden?'1':'0'); }catch(e){}
   });
   try{ var pos=JSON.parse(localStorage.getItem('rei-pet-pos')); if(pos&&pos.left){ pet.style.left=pos.left; pet.style.top=pos.top; pet.style.right='auto'; pet.style.bottom='auto'; } }catch(e){}
-  setTimeout(function(){ say('……欢迎回来。',4000); }, 1200);
+  setTimeout(function(){ say('……おかえり。',4000); }, 1200);
 })();
 </script>
 
@@ -4458,10 +4465,10 @@
   var txt=document.getElementById('reiFaceMood');
   var moodSeq=['normal','happy','tired','stern'];
   var moodText={
-    normal:['……今天也要打卡。','我会看着你完成。','不要勉强自己，但要开始。'],
-    happy:['全部完成。……辛苦了。','今天做得很好。'],
-    tired:['……昨晚没睡好，今天轻一点。','休息也是训练的一部分。'],
-    stern:['……拖延太久了。现在做 5 分钟。','要么做，要么删掉。']
+    normal:['……今日もチェック。','見ているよ。','無理しないで、でも始めよう。'],
+    happy:['全部完了。……お疲れさま。','よくできたね。'],
+    tired:['……寝不足みたい。今日は軽めに。','休むのもトレーニング。'],
+    stern:['……ずっと放置してる。5分だけやろう。','やるか、消すか。']
   };
   function todayStr(){ var d=new Date(); var p=function(x){return (x<10?'0':'')+x;}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
   function readState(){ try{ return JSON.parse(localStorage.getItem('habit-checkin-v1'))||{}; }catch(e){ return {}; } }
@@ -4481,6 +4488,7 @@
   }
   function apply(m){
     var mood=m||computeMood();
+    try{ if(!localStorage.getItem('rei-face-photo') && window.reiGallerySrc) svg.src=window.reiGallerySrc(); }catch(e){}
     svg.setAttribute('data-mood',mood);
     txt.textContent=pick(moodText[mood]||moodText.normal);
   }
@@ -4489,7 +4497,7 @@
   });
   document.getElementById('reiFaceSave').addEventListener('click', function(){
     var mood=svg.getAttribute('data-mood');
-    var a=document.createElement('a'); a.href='assets/rei-face-'+mood+'.png'; a.download='凌波丽大头照-'+mood+'.png'; document.body.appendChild(a); a.click(); a.remove();
+    var a=document.createElement('a'); a.href='assets/rei-face-'+mood+'.png'; a.download='凌波丽顔写真-'+mood+'.png'; document.body.appendChild(a); a.click(); a.remove();
   });
   apply(); setInterval(function(){ apply(); }, 20000);
   svg.addEventListener('click', function(){ var cur=svg.getAttribute('data-mood'); var i=(moodSeq.indexOf(cur)+1)%moodSeq.length; apply(moodSeq[i]); });
@@ -4501,20 +4509,20 @@
 (function(){
   'use strict';
   var QUOTES=[
-    {en:'I am not alone.',zh:'我不是一个人。',mood:'normal'},
-    {en:'I am myself.',zh:'我就是我。',mood:'stern'},
-    {en:"Don't run away.",zh:'不要逃避。',mood:'stern'},
-    {en:'The beginning is always today.',zh:'开始，永远从今天起。',mood:'happy'},
-    {en:'I will do what I can, here and now.',zh:'我做好此刻能做的事。',mood:'normal'},
-    {en:'Silence is also an answer.',zh:'沉默，也是一种回答。',mood:'normal'},
-    {en:'Keep your own pace.',zh:'按自己的步调前进。',mood:'tired'},
-    {en:'Even a small step is progress.',zh:'再小的一步也是前进。',mood:'happy'},
-    {en:'Pain is not the end.',zh:'痛苦不是终点。',mood:'normal'},
-    {en:'I choose to keep going.',zh:'我选择继续。',mood:'happy'},
-    {en:"Don't compare yourself to others.",zh:'不必和别人比较。',mood:'normal'},
-    {en:'Breathe, then begin.',zh:'深呼吸，然后开始。',mood:'tired'},
-    {en:"You don't have to be perfect.",zh:'不完美也可以。',mood:'happy'},
-    {en:'Tomorrow starts tonight.',zh:'明天，从今晚开始。',mood:'normal'}
+    {en:'I am not alone.',zh:'私は一人じゃない。',mood:'normal'},
+    {en:'I am myself.',zh:'私は私。',mood:'stern'},
+    {en:"Don't run away.",zh:'逃げないで。',mood:'stern'},
+    {en:'The beginning is always today.',zh:'始まりはいつも今日から。',mood:'happy'},
+    {en:'I will do what I can, here and now.',zh:'今できることをやる。',mood:'normal'},
+    {en:'Silence is also an answer.',zh:'沈黙も答え。',mood:'normal'},
+    {en:'Keep your own pace.',zh:'自分のペースで。',mood:'tired'},
+    {en:'Even a small step is progress.',zh:'小さな一歩も前進。',mood:'happy'},
+    {en:'Pain is not the end.',zh:'痛みは終わりじゃない。',mood:'normal'},
+    {en:'I choose to keep going.',zh:'続けると決めた。',mood:'happy'},
+    {en:"Don't compare yourself to others.",zh:'人と比べなくていい。',mood:'normal'},
+    {en:'Breathe, then begin.',zh:'深呼吸して、始めよう。',mood:'tired'},
+    {en:"You don't have to be perfect.",zh:'完璧じゃなくていい。',mood:'happy'},
+    {en:'Tomorrow starts tonight.',zh:'明日は今夜から始まる。',mood:'normal'}
   ];
   var card=document.getElementById('reiDaily'); if(!card) return;
   var img=document.getElementById('reiDailyImg');
@@ -4529,12 +4537,13 @@
   function render(i,anim){
     cur=((i%QUOTES.length)+QUOTES.length)%QUOTES.length;
     var q=QUOTES[cur];
-    function set(){ en.textContent=q.en; zh.textContent=q.zh; var cust=null; try{ cust=localStorage.getItem('rei-daily-photo'); }catch(e){} img.src=cust||'assets/rei1.jpg'; var f={normal:'',happy:'saturate(1.15) brightness(1.05)',tired:'saturate(.85) brightness(.94)',stern:'contrast(1.12)'}[q.mood]||''; img.style.filter=f; }
+    function set(){ en.textContent=q.en; zh.textContent=q.zh; var cust=null; try{ cust=localStorage.getItem('rei-daily-photo'); }catch(e){} img.src=cust||((window.reiGallerySrc&&window.reiGallerySrc())||'assets/c7eb41f848245c9d765cbdab713b3163.jpg'); var f={normal:'',happy:'saturate(1.15) brightness(1.05)',tired:'saturate(.85) brightness(.94)',stern:'contrast(1.12)'}[q.mood]||''; img.style.filter=f; }
     if(anim){ card.classList.add('fading'); setTimeout(function(){ set(); card.classList.remove('fading'); },240); } else set();
     dateEl.textContent=dateText();
   }
   window.__reiDailyRefresh=function(){ render(cur,false); };
   document.getElementById('reiDailyRefresh').addEventListener('click', function(){
+    try{ window.reiGalleryShift(1); }catch(e){}
     var n=cur; while(n===cur && QUOTES.length>1) n=Math.floor(Math.random()*QUOTES.length);
     render(n,true);
   });
@@ -4582,7 +4591,7 @@
   input.type='file'; input.accept='image/*'; input.id='logoFileInput'; input.style.display='none';
   document.body.appendChild(input);
   var reset=document.createElement('button');
-  reset.type='button'; reset.className='logo-reset'; reset.id='logoReset'; reset.title='恢复默认图标'; reset.textContent='×';
+  reset.type='button'; reset.className='logo-reset'; reset.id='logoReset'; reset.title='デフォルトに戻す图标'; reset.textContent='×';
   img.parentNode.insertBefore(reset, img.nextSibling);
   function apply(src){
     if(src){ img.src=src; reset.classList.add('show'); }
@@ -4633,23 +4642,28 @@
     var data=read(KEYS[slot]);
     if(slot==='pet'){
       var img=document.getElementById('reiPetImg');
-      img.src=data||'assets/rei1.jpg';
-      var st=document.getElementById('rcPetState'); if(st) st.textContent=data?'已自定义':'默认';
+      img.src=data||((window.reiGallerySrc&&window.reiGallerySrc())||'assets/c7eb41f848245c9d765cbdab713b3163.jpg');
+      var st=document.getElementById('rcPetState'); if(st) st.textContent=data?'カスタム済み':'デフォルト';
     } else if(slot==='face'){
       var fimg=document.getElementById('reiFaceImg');
-      fimg.src=data||'assets/rei1.jpg';
-      var st2=document.getElementById('rcFaceState'); if(st2) st2.textContent=data?'已自定义':'默认';
+      fimg.src=data||((window.reiGallerySrc&&window.reiGallerySrc())||'assets/c7eb41f848245c9d765cbdab713b3163.jpg');
+      var st2=document.getElementById('rcFaceState'); if(st2) st2.textContent=data?'カスタム済み':'デフォルト';
     } else {
       if(window.__reiDailyRefresh) window.__reiDailyRefresh();
-      var st3=document.getElementById('rcDailyState'); if(st3) st3.textContent=data?'已自定义':'默认';
+      var st3=document.getElementById('rcDailyState'); if(st3) st3.textContent=data?'カスタム済み':'デフォルト';
     }
   }
-  function applyAll(){ applySlot('pet'); applySlot('face'); applySlot('daily'); }
+  function applyAll(){
+    applySlot('pet'); applySlot('face'); applySlot('daily');
+    var g=document.getElementById('rcGalState');
+    if(g && window.REI_GALLERY) g.textContent='第 '+((window.reiGalleryIndex?window.reiGalleryIndex():0)+1)+' / '+REI_GALLERY.length+' 张';
+  }
   document.addEventListener('click', function(ev){
-    var b=ev.target.closest?ev.target.closest('[data-slot],[data-reset]'):null;
+    var b=ev.target.closest?ev.target.closest('[data-slot],[data-reset],[data-gal]'):null;
     if(!b) return;
     if(b.getAttribute('data-slot')){ pendingSlot=b.getAttribute('data-slot'); input.click(); }
-    else if(b.getAttribute('data-reset')){ var slot=b.getAttribute('data-reset'); try{ localStorage.removeItem(KEYS[slot]); }catch(e){} applySlot(slot); }
+    else if(b.getAttribute('data-reset')){ var slot=b.getAttribute('data-reset'); try{ localStorage.removeItem(KEYS[slot]); }catch(e){} applySlot(slot); applySlot('daily'); }
+    else if(b.getAttribute('data-gal')){ try{ window.reiGalleryShift(+b.getAttribute('data-gal')); }catch(e){} applyAll(); }
   });
   input.addEventListener('change', function(){
     var f=input.files&&input.files[0]; if(!f||!pendingSlot) return;
@@ -4679,6 +4693,51 @@
   });
   applyAll();
   window.addEventListener('load', function(){ applyAll(); });
+})();
+</script>
+
+<script>
+(function(){
+var MAP={"今日": "今日", "统计": "統計", "健身": "運動", "心得": "メモ", "课程": "授業", "教练": "コーチ", "饮食": "食事", "训练": "トレーニング", "添加": "追加", "删除": "削除", "取消": "キャンセル", "关闭": "閉じる", "保存": "保存", "完成": "完了", "已完成": "完了", "未完成": "未完了", "打卡": "チェック", "今日进度": "今日の進捗", "今日完成": "今日の達成", "今日全部完成": "今日は全達成", "今日课程": "今日の授業", "习惯": "習慣", "添加习惯": "習慣を追加", "归档": "アーカイブ", "已归档": "アーカイブ済み", "恢复": "復元", "暂停": "一時停止", "本月完成": "今月の達成", "本周": "今週", "本月": "今月", "今年": "今年", "连续": "連続", "最长": "最長", "完成率": "達成率", "生成月报": "月間レポートを作成", "月报": "月間レポート", "当天回顾": "その日の振り返り", "当天打卡": "その日の記録", "每日心得": "毎日のメモ", "今日饮食": "今日の食事", "记录": "記録", "热量": "カロリー", "蛋白质": "タンパク質", "碳水": "炭水化物", "脂肪": "脂質", "膳食纤维": "食物繊維", "目标": "目標", "每日目标": "1日の目標", "体重": "体重", "睡眠": "睡眠", "状态": "状態", "自建食物": "食品を追加", "联网搜索": "オンライン検索", "搜索食物": "食品を検索", "固定装": "固定パック", "每份": "1食分", "每100克": "100gあたり", "克": "グラム", "份": "食分", "个": "個", "训练安排": "トレーニング予定", "本周训练安排": "今週のトレーニング", "自由": "自由", "动作": "種目", "组": "セット", "次数": "回数", "重量": "重量", "训练心得": "トレーニングメモ", "计划生成": "プラン作成", "生成训练计划": "トレーニングプランを作成", "下一次训练建议": "次回トレーニングの提案", "安全自查": "安全チェック", "教练档案": "コーチプロフィール", "今日身体记录": "今日の身体記録", "教练分析": "コーチ分析", "教练对话": "コーチとの会話", "发送": "送信", "清空对话": "会話を消去", "我最近很累": "最近疲れている", "今天怎么练": "今日は何を鍛える", "蛋白还差多少": "タンパク質はあとどれくらい", "体重趋势": "体重の推移", "下周计划": "来週の計画", "未来日志": "フューチャーログ", "逾期未完成": "期限切れのタスク", "任务": "タスク", "事件": "イベント", "笔记": "ノート", "添加课程": "授業を追加", "学期设置": "学期設定", "当前第几周": "現在の週", "自动": "自動", "手动": "手動", "周课表": "週間時間割", "开始周": "開始週", "结束周": "終了週", "单双周": "奇数/偶数週", "教师": "担当", "地点": "教室", "周次": "週", "提醒设置": "リマインダー", "开启提醒": "リマインダーをオン", "训练提醒": "トレーニング", "饮食提醒": "食事", "心得提醒": "メモ", "未打卡提醒": "未チェック", "开启浏览器通知": "ブラウザ通知をオン", "保存提醒": "保存", "账号/同步": "アカウント/同期", "导出数据": "データ書き出し", "导入数据": "データ読み込み", "栏目说明": "使い方", "邮箱": "メール", "密码": "パスワード", "登录": "ログイン", "注册": "登録", "登出": "ログアウト", "忘记密码": "パスワードを忘れた", "记住我": "ログイン状態を保持", "已同步": "同期済み", "同步中": "同期中", "同步失败": "同期失敗", "本机服务": "ローカルサービス", "暂无": "なし", "今天没有课": "今日は授業なし", "今天还没有": "今日はまだ", "还没有习惯": "習慣がまだありません", "添加一个想坚持的习惯": "続けたい習慣を追加しましょう", "先添加一个习惯": "まず習慣を追加", "还没有训练记录": "トレーニング記録なし", "没有未来记录": "フューチャーログなし", "没有课程": "授業なし", "训练感受": "トレーニングの感想", "营养": "栄養", "饮食记录": "食事記録", "今日记录": "今日の記録", "删除习惯": "習慣を削除", "永久删除": "完全に削除"};
+var KEYS=Object.keys(MAP).sort(function(a,b){return b.length-a.length;});
+function tr(v){
+  if(v==null) return v;
+  var s=String(v); if(!s) return s;
+  if(MAP[s]) return MAP[s];
+  for(var i=0;i<KEYS.length;i++){ var k=KEYS[i]; if(s.indexOf(k)>=0) s=s.split(k).join(MAP[k]); }
+  s=s.replace(/星期([日一二三四五六])/g,function(_,d){return ({"日":"日曜日","一":"月曜日","二":"火曜日","三":"水曜日","四":"木曜日","五":"金曜日","六":"土曜日"})[d]||d;});
+  s=s.replace(/今日完成\s*(\d+)\s*\/\s*(\d+)/g,"今日の達成 $1 / $2");
+  s=s.replace(/本月完成\s*(\d+)\s*天/g,"今月 $1 日");
+  s=s.replace(/本周\s*(\d+)\s*天/g,"今週 $1 日");
+  s=s.replace(/连续\s*(\d+)\s*天/g,"連続 $1 日");
+  s=s.replace(/最长\s*(\d+)\s*天/g,"最長 $1 日");
+  s=s.replace(/还差\s*约?\s*(\d+)/g,"あと $1");
+  s=s.replace(/(\d+)\s*组/g,"$1 セット");
+  s=s.replace(/(\d+)\s*次/g,"$1 回");
+  s=s.replace(/第\s*(\d+)\s*周/g,"第 $1 週");
+  s=s.replace(/(\d+)\s*天/g,"$1 日");
+  s=s.replace(/(\d+)\s*篇/g,"$1 件");
+  s=s.replace(/(\d+)\s*条/g,"$1 件");
+  return s;
+}
+var busy=false;
+function apply(root){
+  if(!root||busy) return; busy=true;
+  try{
+    if(root.nodeType===3){ var v=tr(root.nodeValue); if(v!==root.nodeValue) root.nodeValue=v; }
+    else {
+      var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),arr=[];
+      while(w.nextNode()){ var n=w.currentNode,p=n.parentNode; if(p&&p.nodeName!=="SCRIPT"&&p.nodeName!=="STYLE") arr.push(n); }
+      arr.forEach(function(n){ var v=tr(n.nodeValue); if(v!==n.nodeValue) n.nodeValue=v; });
+      if(root.querySelectorAll){
+        root.querySelectorAll("[placeholder]").forEach(function(el){ var v=tr(el.getAttribute("placeholder")); if(v!==el.getAttribute("placeholder")) el.setAttribute("placeholder",v); });
+        root.querySelectorAll("[title]").forEach(function(el){ var v=tr(el.getAttribute("title")); if(v!==el.getAttribute("title")) el.setAttribute("title",v); });
+      }
+    }
+  } finally { busy=false; }
+}
+new MutationObserver(function(ms){ if(busy) return; ms.forEach(function(m){ if(m.type==="characterData") apply(m.target); else m.addedNodes.forEach(function(n){ if(n.nodeType===1||n.nodeType===3) apply(n); }); }); }).observe(document.body,{childList:true,subtree:true,characterData:true});
+apply(document.body);
 })();
 </script>
 

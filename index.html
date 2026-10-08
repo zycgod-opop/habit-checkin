@@ -2379,6 +2379,30 @@
     return { days: Object.keys(days).length, moves: cnt, avg: starDays ? Math.round(starsSum / starDays * 10) / 10 : 0 };
   }
 
+  function jrnMovesHtml(ds){
+    var arr = workOf(ds);
+    var rec2 = state.trainDays[ds] || {};
+    if(!arr.length) return '<div class="jrn-empty">这一天还没记录动作，先在上方把动作勾进日志吧</div>';
+    return '<ul class="jrn-list">' + arr.map(function(en, i){
+      var hasM = !!(rec2.moves && rec2.moves[en.id] !== undefined);
+      var note = hasM ? (rec2.moves[en.id] || '') : '';
+      var noteBox = '<div class="mnote-box" data-role="mnote" data-id="' + en.id + '" style="display:' + (hasM ? 'block' : 'none') + '">' +
+        '<textarea class="mnote-in" data-id="' + en.id + '" maxlength="300" placeholder="补充这个动作的备注…" style="width:100%;min-height:44px;border:1px solid var(--line-strong);border-radius:8px;padding:7px 9px;font-size:12.5px;background:var(--surface-2);color:var(--ink);outline:none;font-family:inherit;resize:vertical;">' + esc(note) + '</textarea></div>';
+      return '<li><span class="jrn-move"><span class="rm">' + roman(i+1) + '.</span><span class="mn">' + esc(en.name) + '</span>' +
+        '<span class="ms">' + fmtSets(en) + '</span></span>' +
+        '<button type="button" class="mnote-btn" data-act="mnoteToggle" data-id="' + en.id + '">' + (hasM ? '收起备注' : '＋ 备注') + '</button>' + noteBox + '</li>';
+    }).join('') + '</ul>';
+  }
+  function trainStatsHtml(ds){
+    var pFrom = monOf(ds), pTo = addDaysStr(pFrom, 6);
+    var mPref = ds.slice(0,7), yPref = ds.slice(0,4);
+    var wk = periodStats(pFrom, pTo), mo = periodStats(mPref + '-01', mPref + '-31'), yr = periodStats(yPref + '-01-01', yPref + '-12-31');
+    return '<div class="stats-grid" id="trainStats">' +
+      '<div class="s-cell"><b>' + wk.days + ' 练 · ' + wk.moves + ' 动</b><span>本周 · 平均 ★' + wk.avg + '</span></div>' +
+      '<div class="s-cell"><b>' + mo.days + ' 练 · ' + mo.moves + ' 动</b><span>本月 · 平均 ★' + mo.avg + '</span></div>' +
+      '<div class="s-cell"><b>' + yr.days + ' 练 · ' + yr.moves + ' 动</b><span>今年 · 平均 ★' + yr.avg + '</span></div>' +
+    '</div>';
+  }
   function renderTrain(){
     var dates = weekDatesOf(fitSelDate);
     var selIdx = dates.indexOf(fitSelDate);
@@ -2421,7 +2445,8 @@
                    '<span class="set-tag">×</span><input class="set-rep" data-id="' + mv.id + '" data-si="' + si + '" type="number" step="1" min="0" placeholder="次" value="' + (s[1] === null || s[1] === undefined ? '' : s[1]) + '">' +
                    '<button type="button" class="add-set" data-act="delSet" data-id="' + mv.id + '" data-si="' + si + '">删</button>';
           }).join('') +
-          '<button type="button" class="add-set" data-act="addSet" data-id="' + mv.id + '">＋ 加一组</button></div>';
+          '<button type="button" class="add-set" data-act="addSet" data-id="' + mv.id + '">＋ 加一组</button>' +
+            '<button type="button" class="add-set" data-act="repeatSet" data-id="' + mv.id + '" title="复制最后一次输入的重量和次数">↻ 重复上一组</button></div>';
         }
         return '<li class="move-row" style="' + (on ? '' : 'opacity:.75') + '">' +
           '<button type="button" class="check move-check' + (on ? ' done' : '') + '" data-act="moveToggle" data-id="' + mv.id + '" aria-label="' + (on ? '移除' : '加入') + '">' + (on ? CHECK_SVG : '') + '</button>' +
@@ -2436,26 +2461,7 @@
       return '<span class="st' + ((rec2.stars || 0) >= v ? ' on' : '') + '" data-act="star" data-v="' + v + '">★</span>';
     }).join('');
 
-    var jrnMoves = '';
-    var arr = workOf(fitSelDate);
-    if(!arr.length){
-      jrnMoves = '<div class="jrn-empty">这一天还没记录动作，先在上方把动作勾进日志吧</div>';
-    }else{
-      jrnMoves = '<ul class="jrn-list">' + arr.map(function(en, i){
-        var hasM = !!(rec2.moves && rec2.moves[en.id] !== undefined);
-        var note = hasM ? (rec2.moves[en.id] || '') : '';
-        var noteBox = '<div class="mnote-box" data-role="mnote" data-id="' + en.id + '" style="display:' + (hasM ? 'block' : 'none') + '">' +
-          '<textarea class="mnote-in" data-id="' + en.id + '" maxlength="300" placeholder="补充这个动作的备注…" style="width:100%;min-height:44px;border:1px solid var(--line-strong);border-radius:8px;padding:7px 9px;font-size:12.5px;background:var(--surface-2);color:var(--ink);outline:none;font-family:inherit;resize:vertical;">' + esc(note) + '</textarea></div>';
-        return '<li><span class="jrn-move"><span class="rm">' + roman(i+1) + '.</span><span class="mn">' + esc(en.name) + '</span>' +
-          '<span class="ms">' + fmtSets(en) + '</span></span>' +
-          '<button type="button" class="mnote-btn" data-act="mnoteToggle" data-id="' + en.id + '">' + (hasM ? '收起备注' : '＋ 备注') + '</button>' + noteBox + '</li>';
-      }).join('') + '</ul>';
-    }
-
-    var pFrom = monOf(fitSelDate), pTo = addDaysStr(pFrom, 6);
-    var mPref = fitSelDate.slice(0,7), yPref = fitSelDate.slice(0,4);
-    var wk = periodStats(pFrom, pTo), mo = periodStats(mPref + '-01', mPref + '-31'), yr = periodStats(yPref + '-01-01', yPref + '-12-31');
-
+    var jrnMoves = jrnMovesHtml(fitSelDate);
     var schEditor = '<div class="card fit-card"><h3>本周训练安排（可自由改）</h3><div style="font-size:12px;color:var(--ink-3);margin:-6px 2px 8px;">每天可任选 推 / 拉 / 腿 / 休 / 自由；改完立即生效，不绑定固定天数。</div>' +
       CDAYS.map(function(nm, i){
         var g = dayGroupDef(dates[i]);
@@ -2477,15 +2483,24 @@
         '<div class="jrn-head"><div><h3 style="margin:0 0 2px;">训练心得</h3><span style="font-size:12px;color:var(--ink-3);">' + fmtCN(fitSelDate) + ' · 用罗马数字对应上面的动作</span></div></div>' +
         '<div class="stars" id="starsBox">' + starsHtml + '</div>' +
         '<textarea class="jrn-note" id="jrnNote" maxlength="1000" placeholder="今天训练感觉如何？状态、细节都可以写…">' + esc(rec2.note || '') + '</textarea>' +
-        '<div style="margin-top:12px;">' + jrnMoves + '</div>' +
-        '<div class="stats-grid">' +
-          '<div class="s-cell"><b>' + wk.days + ' 练 · ' + wk.moves + ' 动</b><span>本周 · 平均 ★' + wk.avg + '</span></div>' +
-          '<div class="s-cell"><b>' + mo.days + ' 练 · ' + mo.moves + ' 动</b><span>本月 · 平均 ★' + mo.avg + '</span></div>' +
-          '<div class="s-cell"><b>' + yr.days + ' 练 · ' + yr.moves + ' 动</b><span>今年 · 平均 ★' + yr.avg + '</span></div>' +
-        '</div>' +
+        '<div id="jrnMovesBox" style="margin-top:12px;">' + jrnMoves + '</div>' +
+        trainStatsHtml(fitSelDate) +
       '</div>';
   }
 
+  function updateSetFromEl(el){
+    var en = findMoveEntry(fitSelDate, el.getAttribute('data-id'));
+    if(!en) return;
+    var si = +el.getAttribute('data-si');
+    if(!en.sets[si]) en.sets[si] = [null, null];
+    var v = el.value;
+    if(el.classList.contains('set-kg')) en.sets[si][0] = (v === '' ? null : +v);
+    else en.sets[si][1] = (v === '' ? null : +v);
+  }
+  function updateTrainDerived(){
+    var jb=$('jrnMovesBox'); if(jb) jb.innerHTML = jrnMovesHtml(fitSelDate);
+    var ts=$('trainStats'); if(ts && ts.parentNode){ ts.outerHTML = trainStatsHtml(fitSelDate); }
+  }
   function fitRefreshAll(){
     fitDietView.hidden = fitSub !== 'diet';
     fitTrainView.hidden = fitSub !== 'train';
@@ -2707,6 +2722,18 @@
       var en = findMoveEntry(fitSelDate, b.getAttribute('data-id'));
       if(en){ en.sets.push([null, null]); save(); renderTrain(); }
     }
+    else if(act === 'repeatSet'){
+      var enR = findMoveEntry(fitSelDate, b.getAttribute('data-id'));
+      if(enR){
+        var last = null;
+        for(var ri=(enR.sets||[]).length-1; ri>=0; ri--){
+          var st=enR.sets[ri];
+          if(st && (st[0]!==null&&st[0]!==undefined&&st[0]!=='') || (st && st[1]!==null&&st[1]!==undefined&&st[1]!=='')){ last=st; break; }
+        }
+        enR.sets.push(last ? [last[0], last[1]] : [null, null]);
+        save(); renderTrain();
+      }
+    }
     else if(act === 'delSet'){
       var en2 = findMoveEntry(fitSelDate, b.getAttribute('data-id'));
       var si = +b.getAttribute('data-si');
@@ -2744,11 +2771,19 @@
         if(!en.sets[si]) en.sets[si] = [null, null];
         if(cl.contains('set-kg')) en.sets[si][0] = (v === '' ? null : +v);
         else en.sets[si][1] = (v === '' ? null : +v);
-        save(); renderTrain();
+        save(); updateTrainDerived();
       }
     }
   });
+  var trainTypingTimer = null;
   fitTrainView.addEventListener('input', function(ev){
+    var el = ev.target;
+    if(el.classList && (el.classList.contains('set-kg') || el.classList.contains('set-rep'))){
+      var target = el;
+      if(trainTypingTimer) clearTimeout(trainTypingTimer);
+      trainTypingTimer = setTimeout(function(){ updateSetFromEl(target); save(); updateTrainDerived(); }, 350);
+      return;
+    }
     if(ev.target.id === 'jrnNote'){
       if(trainSaveTimer) clearTimeout(trainSaveTimer);
       trainSaveTimer = setTimeout(function(){

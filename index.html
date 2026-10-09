@@ -669,6 +669,10 @@
   .logo-reset.show{display:block;}
   .logo-reset:hover{color:var(--red);border-color:var(--red);}
 
+
+  details.stat-notes > summary{list-style:revert;outline:none;}
+  details.stat-notes[open] > summary{margin-bottom:6px;}
+
 </style>
 </head>
 <body>
@@ -2144,9 +2148,9 @@
           '<button type="button" class="mini-btn" data-act="addCustomFood">＋ 自建食物/品牌</button>' +
           (list.length ? '<button type="button" class="mini-btn" data-act="clearDietDay">清空这一天记录</button>' : '') +
         '</div>' +
-        ((state.foods && state.foods.length) ? ('<div class="stat-notes" style="margin-top:10px;"><div class="stat-notes-title">我的自建食物（'+state.foods.length+'）</div><ul>' +
+        ((state.foods && state.foods.length) ? ('<details class="stat-notes" id="customFoodBox"' + (customFoodsOpenPref() ? ' open' : '') + ' style="margin-top:10px;"><summary class="stat-notes-title" style="cursor:pointer;color:var(--blue);font-weight:600;">我的自建食物（'+state.foods.length+'）· 点这里展开/收起</summary><ul>' +
           state.foods.map(function(f){ return '<li><span class="nd">自建</span><span style="flex:1;">'+esc(f.name)+(f.brand?(' · '+esc(f.brand)):'')+' · '+(f.kind==='f'?('每'+(f.unitLabel||'份')+' '+Math.round((f.perU&&f.perU.kcal)||0)+'kcal'):(f.kcal+'kcal/100g'))+'</span><button type="button" class="mnote-btn" data-act="delCustomFood" data-id="'+f.id+'">删除</button></li>'; }).join('') +
-          '</ul></div>') : '') +
+          '</ul></details>') : '') +
         '<p class="fit-note">营养成分为每 100 克常见参考值（非精确），品牌食品请以包装标注为准；输入克数即可自动换算。</p>' +
       '</div>' +
       '<div class="overlay" id="foodOverlay" hidden>' +
@@ -2188,6 +2192,8 @@
       '</div>';
     fitDietView.innerHTML = html;
     updateFoodResults('');
+    var cfBox = $('customFoodBox');
+    if(cfBox) cfBox.addEventListener('toggle', function(){ setCustomFoodsOpenPref(cfBox.open); });
   }
 
   function updateFoodResults(q){
@@ -2255,6 +2261,8 @@
     return qty + '克';
   }
   var pendingFood = null;
+  function customFoodsOpenPref(){ try{ return localStorage.getItem('habit-cf-open') === '1'; }catch(e){ return false; } }
+  function setCustomFoodsOpenPref(v){ try{ localStorage.setItem('habit-cf-open', v ? '1' : '0'); }catch(e){} }
   function rememberServing(food, grams){
     if(!food || !food.id) return;
     var g = Math.max(1, Math.round(+grams || 0));

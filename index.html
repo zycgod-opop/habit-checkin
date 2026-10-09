@@ -1985,7 +1985,7 @@
     var map = {};
     arr.forEach(function(e){
       if(!e) return;
-      if(ds && state.dietDeleted && state.dietDeleted[ds + '|' + e.id]) return;
+      if(ds && state.dietDeleted && (state.dietDeleted[ds + '|' + e.id] || state.dietDeleted[ds + '|N|' + (e.kind||'w') + '|' + e.name])) return;
       var k = dietAggKey(e);
       if(!map[k]){
         var base = {};
@@ -2569,8 +2569,15 @@
       if(hit < 0 && isFinite(didx) && arr[didx]) hit = didx;
       if(hit >= 0){
         state.dietDeleted = state.dietDeleted || {};
-        if(arr[hit] && arr[hit].id) state.dietDeleted[dietSelDate + '|' + arr[hit].id] = Date.now();
-        arr.splice(hit,1);
+        var targetName = arr[hit].name;
+        var targetKind = arr[hit].kind || 'w';
+        state.dietDeleted[dietSelDate + '|N|' + targetKind + '|' + targetName] = Date.now();
+        for(var dj=arr.length-1; dj>=0; dj--){
+          if(arr[dj] && arr[dj].name === targetName && (arr[dj].kind||'w') === targetKind){
+            if(arr[dj].id) state.dietDeleted[dietSelDate + '|' + arr[dj].id] = Date.now();
+            arr.splice(dj,1);
+          }
+        }
       }
       save(); renderDiet();
     }

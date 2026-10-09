@@ -2140,9 +2140,13 @@
             '</li>';
           }).join('') +
         '</ul>' +
-        '<div style="display:flex;gap:8px;margin-top:10px;">' +
+        '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">' +
           '<button type="button" class="mini-btn" data-act="addCustomFood">＋ 自建食物/品牌</button>' +
+          (list.length ? '<button type="button" class="mini-btn" data-act="clearDietDay">清空这一天记录</button>' : '') +
         '</div>' +
+        ((state.foods && state.foods.length) ? ('<div class="stat-notes" style="margin-top:10px;"><div class="stat-notes-title">我的自建食物（'+state.foods.length+'）</div><ul>' +
+          state.foods.map(function(f){ return '<li><span class="nd">自建</span><span style="flex:1;">'+esc(f.name)+(f.brand?(' · '+esc(f.brand)):'')+' · '+(f.kind==='f'?('每'+(f.unitLabel||'份')+' '+Math.round((f.perU&&f.perU.kcal)||0)+'kcal'):(f.kcal+'kcal/100g'))+'</span><button type="button" class="mnote-btn" data-act="delCustomFood" data-id="'+f.id+'">删除</button></li>'; }).join('') +
+          '</ul></div>') : '') +
         '<p class="fit-note">营养成分为每 100 克常见参考值（非精确），品牌食品请以包装标注为准；输入克数即可自动换算。</p>' +
       '</div>' +
       '<div class="overlay" id="foodOverlay" hidden>' +
@@ -2198,6 +2202,7 @@
               ? '每' + (f.unitLabel || '份') + '：' + Math.round(f.perU ? f.perU.kcal||0 : 0) + ' kcal · 蛋白 ' + (f.perU ? f.perU.p||0 : 0) + 'g · 碳水 ' + (f.perU ? f.perU.c||0 : 0) + 'g · 脂肪 ' + (f.perU ? f.perU.f||0 : 0) + 'g · 纤维 ' + (f.perU ? f.perU.fib||0 : 0) + 'g'
               : f.kcal + ' kcal · 蛋白 ' + f.p + 'g · 碳水 ' + f.c + 'g · 脂肪 ' + f.f + 'g · 纤维 ' + (f.fib||0) + 'g /100g') + '</span></span>' +
             '<button type="button" class="add-food" data-act="addFood" data-id="' + f.id + '">＋</button>' +
+            ((state.foods||[]).some(function(cf){ return cf.id===f.id; }) ? '<button type="button" class="mnote-btn" data-act="delCustomFood" data-id="' + f.id + '" title="删除自建食物">删</button>' : '') +
           '</li>';
         }).join('') + '</ul>'
       : '<div class="jrn-empty">没有匹配的食物。点右下「自建食物/品牌」，或点「联网搜索」找品牌。</div>';
@@ -2540,6 +2545,21 @@
       if(pendingFood && qn && qu){ addDietFood(pendingFood, qu.value, Math.max(0, +qn.value || 1), qf ? (+qf.value || 100) : 100); pendingFood = null; }
     }
     else if(act === 'cancelQty'){ pendingFood = null; updateFoodResults(''); }
+    else if(act === 'delCustomFood'){
+      var cid = b.getAttribute('data-id');
+      var cfood = (state.foods||[]).filter(function(x){ return x.id===cid; })[0];
+      if(cfood && window.confirm('删除自建食物「'+cfood.name+'」？\n（已经记录到当天的条目不会自动删除，可在下方列表用 × 删除）')){
+        state.foods = (state.foods||[]).filter(function(x){ return x.id!==cid; });
+        if(state.foodServing) delete state.foodServing[cid];
+        save(); renderDiet();
+      }
+    }
+    else if(act === 'clearDietDay'){
+      if(window.confirm('清空 '+fmtCN(dietSelDate)+' 的全部饮食记录？')){
+        state.dietLog[dietSelDate] = [];
+        save(); renderDiet();
+      }
+    }
     else if(act === 'delDiet'){
       var did = b.getAttribute('data-id');
       var didx = +b.getAttribute('data-i');

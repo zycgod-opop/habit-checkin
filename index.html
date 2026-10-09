@@ -953,7 +953,7 @@
   var noteOverlay = $('noteOverlay'), noteTitle = $('noteTitle'), noteSub = $('noteSub');
   var noteText = $('noteText'), noteClear = $('noteClear');
 
-  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] }, trainSchedule: {}, reminders: { enabled:false, train:'19:30', diet:'20:30', journal:'22:30', miss:'21:00', notified:{} }, bulletDeleted: {} }; }
+  function defaultState(){ return { habits: [], records: {}, notes: {}, journal: {}, bullets: {}, foods: [], movements: [], dietLog: {}, workouts: {}, trainDays: {}, goals: { kcal: 0, protein: 0 }, weights: {}, foodServing: {}, courses: [], semester: { start: '', weeks: 16, manualWeek: 0 }, coach: { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] }, trainSchedule: {}, reminders: { enabled:false, train:'19:30', diet:'20:30', journal:'22:30', miss:'21:00', notified:{} }, bulletDeleted: {}, dietDeleted: {} }; }
 
   function load(){
     try{
@@ -983,6 +983,7 @@
       raw.trainSchedule = (raw.trainSchedule && typeof raw.trainSchedule === 'object') ? raw.trainSchedule : {};
       raw.reminders = (raw.reminders && typeof raw.reminders === 'object') ? raw.reminders : { enabled:false, train:'19:30', diet:'20:30', journal:'22:30', miss:'21:00', notified:{} };
       raw.bulletDeleted = (raw.bulletDeleted && typeof raw.bulletDeleted === 'object') ? raw.bulletDeleted : {};
+      raw.dietDeleted = (raw.dietDeleted && typeof raw.dietDeleted === 'object') ? raw.dietDeleted : {};
       return raw;
     }catch(e){ return defaultState(); }
   }
@@ -1806,7 +1807,8 @@
           coach: (data.coach && typeof data.coach === 'object') ? data.coach : { profile: { sex:'男', age:20, height:175, goal:'增肌', level:'新手', days:4, equipment:'健身房' }, metrics: {}, plans: [], chat: [], kb: [] },
           trainSchedule: (data.trainSchedule && typeof data.trainSchedule === 'object') ? data.trainSchedule : {},
           reminders: (data.reminders && typeof data.reminders === 'object') ? data.reminders : { enabled:false, train:'19:30', diet:'20:30', journal:'22:30', miss:'21:00', notified:{} },
-          bulletDeleted: (data.bulletDeleted && typeof data.bulletDeleted === 'object') ? data.bulletDeleted : {}
+          bulletDeleted: (data.bulletDeleted && typeof data.bulletDeleted === 'object') ? data.bulletDeleted : {},
+          dietDeleted: (data.dietDeleted && typeof data.dietDeleted === 'object') ? data.dietDeleted : {}
         };
         save(); render(); renderDate();
         if(!viewStats.hidden) renderStats();
@@ -1979,10 +1981,11 @@
     var p = e.per || {};
     return 'w|' + e.name + '|' + n0(p.kcal) + '|' + n0(p.p) + '|' + n0(p.c) + '|' + n0(p.f) + '|' + n0(p.fib);
   }
-  function aggregateDietList(arr){
+  function aggregateDietList(arr, ds){
     var map = {};
     arr.forEach(function(e){
       if(!e) return;
+      if(ds && state.dietDeleted && state.dietDeleted[ds + '|' + e.id]) return;
       var k = dietAggKey(e);
       if(!map[k]){
         var base = {};
@@ -2008,10 +2011,14 @@
   }
   function normalizeAllDiet(){
     var changed = false;
+    if(state.dietDeleted){
+      var cut = Date.now() - 60*86400000;
+      Object.keys(state.dietDeleted).forEach(function(k){ if(!state.dietDeleted[k] || state.dietDeleted[k] < cut){ delete state.dietDeleted[k]; changed = true; } });
+    }
     Object.keys(state.dietLog || {}).forEach(function(ds){
       var raw = state.dietLog[ds] || [];
       normalizeDietUnits(raw);
-      var cleaned = aggregateDietList(dedupeDietList(raw));
+      var cleaned = aggregateDietList(dedupeDietList(raw), ds);
       if(cleaned.length !== raw.length || JSON.stringify(cleaned) !== JSON.stringify(raw)){ state.dietLog[ds] = cleaned; changed = true; }
     });
     if(changed) save();
@@ -2034,7 +2041,7 @@
     var ds = dietSelDate;
     var raw = dietArr(ds);
     if(normalizeDietUnits(raw)) save();
-    var cleaned = aggregateDietList(dedupeDietList(raw));
+    var cleaned = aggregateDietList(dedupeDietList(raw), ds);
     if(cleaned.length !== raw.length){ state.dietLog[ds] = cleaned; save(); }
     var list = cleaned;
     var t = dietTotals(list);
@@ -2115,7 +2122,7 @@
                 '<span class="qty-tag">' + esc(e.unitLabel || '份') + '</span>' +
                 '<button type="button" class="mini-btn" data-act="incF" data-i="' + i + '" style="padding:3px 8px;white-space:nowrap;">＋1</button>' +
                 '<span class="kcal">' + Math.round(nu2.kcal) + ' kcal</span>' +
-                '<button type="button" class="act del" data-act="delDiet" data-id="' + e.id + '" title="移除">×</button>' +
+                '<button type="button" class="act del" data-act="delDiet" data-id="' + e.id + '" data-i="' + i + '" title="移除">×</button>' +
               '</li>';
             }
             var eUnit = editUnitOf(e);
@@ -2129,7 +2136,7 @@
               '<input class="qty-edit" data-id="' + e.id + '" type="number" min="0" step="1" value="' + entryQty(e) + '">' +
               '<select class="unit-edit" data-id="' + e.id + '">' + unitOpts + '</select>' +
               '<span class="kcal">' + Math.round(itemNut(e).kcal) + ' kcal</span>' +
-              '<button type="button" class="act del" data-act="delDiet" data-id="' + e.id + '" title="移除">×</button>' +
+              '<button type="button" class="act del" data-act="delDiet" data-id="' + e.id + '" data-i="' + i + '" title="移除">×</button>' +
             '</li>';
           }).join('') +
         '</ul>' +
@@ -2535,9 +2542,15 @@
     else if(act === 'cancelQty'){ pendingFood = null; updateFoodResults(''); }
     else if(act === 'delDiet'){
       var did = b.getAttribute('data-id');
+      var didx = +b.getAttribute('data-i');
       var arr = dietEntries();
-      for(var di=0;di<arr.length;di++){
-        if(arr[di].id === did){ arr.splice(di,1); break; }
+      var hit = -1;
+      for(var di=0;di<arr.length;di++){ if(String(arr[di].id) === String(did)){ hit = di; break; } }
+      if(hit < 0 && isFinite(didx) && arr[didx]) hit = didx;
+      if(hit >= 0){
+        state.dietDeleted = state.dietDeleted || {};
+        if(arr[hit] && arr[hit].id) state.dietDeleted[dietSelDate + '|' + arr[hit].id] = Date.now();
+        arr.splice(hit,1);
       }
       save(); renderDiet();
     }
@@ -2958,7 +2971,7 @@
     if(o.dietLog && typeof dietEntryKey === 'function'){
       Object.keys(o.dietLog).forEach(function(dsk){
         var arr = o.dietLog[dsk] || [];
-        o.dietLog[dsk] = (typeof aggregateDietList === 'function') ? aggregateDietList(arr) : arr;
+        o.dietLog[dsk] = (typeof aggregateDietList === 'function') ? aggregateDietList(arr, dsk) : arr;
       });
     }
     return o;
